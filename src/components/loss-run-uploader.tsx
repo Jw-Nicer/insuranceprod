@@ -6,7 +6,7 @@ import { UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
-import type { UploadedData } from '@/app/loss-run/page';
+import type { UploadedData } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 interface LossRunUploaderProps {

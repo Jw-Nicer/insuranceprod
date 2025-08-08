@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { Claim } from '@/app/page';
+import type { Claim } from '@/types';
 import type { AnalyzeInsuranceClaimsOutput } from '@/ai/flows/analyze-insurance-claims';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

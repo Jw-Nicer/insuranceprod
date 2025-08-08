@@ -1,7 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import {
   Select,
   SelectTrigger,
@@ -28,8 +34,14 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import type { PremiumHistory } from '@/app/loss-run/page';
-import { formatCurrency } from '@/lib/utils';
+import {
+  TrendingUp,
+  Combine,
+  Percent,
+  Hash,
+} from 'lucide-react';
+import type { PremiumHistory } from '@/types';
+import { formatCurrency, formatPercent } from '@/lib/utils';
 
 const scenarios = [
   { label: '3%-4%', rate: 0.035 },
@@ -39,9 +51,19 @@ const scenarios = [
 
 interface LossRunDashboardProps {
   history: PremiumHistory[];
+  totalClaims: number | null;
+  ratios: {
+    paidLossRatio: number | null;
+    expenseRatio: number | null;
+    combinedRatio: number | null;
+  };
 }
 
-export function LossRunDashboard({ history: rawHistory }: LossRunDashboardProps) {
+export function LossRunDashboard({
+  history: rawHistory,
+  totalClaims,
+  ratios,
+}: LossRunDashboardProps) {
   const [scenarioHistory, setScenarioHistory] = useState<PremiumHistory[]>([]);
   const [projection, setProjection] = useState<PremiumHistory[]>([]);
   const [selectedScenario, setSelectedScenario] = useState(scenarios[0]);
@@ -57,7 +79,9 @@ export function LossRunDashboard({ history: rawHistory }: LossRunDashboardProps)
       const yearsSinceStart = d.year - firstPoint.year;
       return {
         year: d.year,
-        premium: +(firstPoint.premium * Math.pow(1 + selectedScenario.rate, yearsSinceStart)).toFixed(2),
+        premium: +(
+          firstPoint.premium * Math.pow(1 + selectedScenario.rate, yearsSinceStart)
+        ).toFixed(2),
       };
     });
     setScenarioHistory(histScenario);
@@ -69,45 +93,109 @@ export function LossRunDashboard({ history: rawHistory }: LossRunDashboardProps)
     for (let i = 1; i <= 5; i++) {
       futureProj.push({
         year: lastPoint.year + i,
-        premium: +(lastPoint.premium * Math.pow(1 + selectedScenario.rate, i)).toFixed(2),
+        premium: +(
+          lastPoint.premium * Math.pow(1 + selectedScenario.rate, i)
+        ).toFixed(2),
       });
     }
     setProjection(futureProj);
   }, [rawHistory, selectedScenario]);
-  
-  const dataMap: {[key: number]: { year: number; history: number | null; projection: number | null }} = {};
+
+  const dataMap: {
+    [key: number]: { year: number; history: number | null; projection: number | null };
+  } = {};
 
   scenarioHistory.forEach((d) => {
     dataMap[d.year] = { year: d.year, history: d.premium, projection: null };
   });
 
   projection.forEach((d) => {
-    const lastHistPoint = scenarioHistory[scenarioHistory.length-1];
-    if(lastHistPoint && d.year === lastHistPoint.year) {
-        dataMap[d.year]!.projection = lastHistPoint.premium;
+    const lastHistPoint = scenarioHistory[scenarioHistory.length - 1];
+    if (lastHistPoint && d.year === lastHistPoint.year) {
+      dataMap[d.year]!.projection = lastHistPoint.premium;
     } else {
-        dataMap[d.year] = { year: d.year, history: null, projection: d.premium };
+      dataMap[d.year] = { year: d.year, history: null, projection: d.premium };
     }
   });
-  
+
   // Create a point to connect the lines
   if (scenarioHistory.length > 0) {
-      const lastHistPoint = scenarioHistory[scenarioHistory.length-1];
-      if (lastHistPoint) {
-          dataMap[lastHistPoint.year]!.projection = lastHistPoint.premium;
-      }
+    const lastHistPoint = scenarioHistory[scenarioHistory.length - 1];
+    if (lastHistPoint) {
+      dataMap[lastHistPoint.year]!.projection = lastHistPoint.premium;
+    }
   }
 
   const chartData = Object.values(dataMap).sort((a, b) => a.year - b.year);
 
-
   return (
-    <div className="grid gap-6 animate-in fade-in-50 duration-500">
+    <div className="grid gap-6">
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Claims</CardTitle>
+            <Hash className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {totalClaims?.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total number of claims in the uploaded data.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Paid Loss Ratio
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatPercent(ratios.paidLossRatio)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Shows how much of your premiums are being paid out as losses.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Expense Ratio</CardTitle>
+            <Percent className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatPercent(ratios.expenseRatio)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Tracks claims-handling costs relative to premium.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Combined Ratio</CardTitle>
+            <Combine className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatPercent(ratios.combinedRatio)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Measures underwriting profitability. (Loss + Expense)
+            </p>
+          </CardContent>
+        </Card>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Premium Projection Analysis</CardTitle>
           <CardDescription>
-            A premium projection based on your earliest data point, compounded annually by the selected growth scenario.
+            A premium projection based on your earliest data point, compounded
+            annually by the selected growth scenario.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -133,12 +221,22 @@ export function LossRunDashboard({ history: rawHistory }: LossRunDashboardProps)
             </Select>
           </div>
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" domain={['dataMin', 'dataMax']} tickCount={chartData.length} />
+              <XAxis
+                dataKey="year"
+                domain={['dataMin', 'dataMax']}
+                tickCount={chartData.length}
+              />
               <YAxis tickFormatter={(value) => formatCurrency(value as number)} />
               <Tooltip
-                formatter={(value, name) => [formatCurrency(value as number), name === 'history' ? 'Adjusted Historical' : 'Projected']}
+                formatter={(value, name) => [
+                  formatCurrency(value as number),
+                  name === 'history' ? 'Adjusted Historical' : 'Projected',
+                ]}
                 labelClassName="font-bold"
               />
               <Legend />
@@ -161,67 +259,72 @@ export function LossRunDashboard({ history: rawHistory }: LossRunDashboardProps)
                 strokeWidth={2}
                 connectNulls
               />
-               <ReferenceLine
+              <ReferenceLine
                 x={currentYear}
                 stroke="hsl(var(--chart-3))"
                 strokeDasharray="3 3"
-                label={{ value: "Current Year", position: "insideTopLeft" }}
+                label={{ value: 'Current Year', position: 'insideTopLeft' }}
               />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-            <CardHeader>
-                <CardTitle className="text-xl">Adjusted Historical Premiums</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Year</TableHead>
-                        <TableHead className="text-right">Premium</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {scenarioHistory.map((d) => (
-                        <TableRow key={d.year}>
-                        <TableCell>{d.year}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(d.premium)}</TableCell>
-                        </TableRow>
-                    ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
+          <CardHeader>
+            <CardTitle className="text-xl">
+              Adjusted Historical Premiums
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Premium</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {scenarioHistory.map((d) => (
+                  <TableRow key={d.year}>
+                    <TableCell>{d.year}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(d.premium)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
         </Card>
 
         <Card>
-            <CardHeader>
-                <CardTitle className="text-xl">Projected Premiums</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Year</TableHead>
-                        <TableHead className="text-right">Premium</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {projection.map((d) => (
-                        <TableRow key={d.year}>
-                        <TableCell>{d.year}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(d.premium)}</TableCell>
-                        </TableRow>
-                    ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
+          <CardHeader>
+            <CardTitle className="text-xl">Projected Premiums</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Premium</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projection.map((d) => (
+                  <TableRow key={d.year}>
+                    <TableCell>{d.year}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(d.premium)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }

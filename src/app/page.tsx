@@ -7,11 +7,7 @@ import InsuranceDashboard from '@/components/insurance-dashboard';
 import { parseCsv } from '@/lib/csv-helpers';
 import { useToast } from "@/hooks/use-toast"
 import { AppShell } from '@/components/app-shell';
-
-// A generic claim type
-export type Claim = {
-  [key: string]: string | number;
-};
+import type { Claim } from '@/types';
 
 export default function Home() {
   const [claims, setClaims] = useState<Claim[] | null>(null);
