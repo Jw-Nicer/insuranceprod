@@ -35,17 +35,18 @@ import {
 } from 'recharts';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 async function getMetrics() {
   try {
-    const doc = await firestore
-      .collection('dashboardMetrics')
-      .doc('current')
-      .get();
-    if (!doc.exists) {
+    const docRef = doc(firestore, 'dashboardMetrics', 'current');
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
       return { data: null, error: 'Metrics data not found.' };
     }
-    const data = doc.data();
+    const data = docSnap.data();
 
     // Convert Firestore Timestamp to string
     if (data && data.updatedAt) {
