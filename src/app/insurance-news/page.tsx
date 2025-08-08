@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -160,6 +161,8 @@ export default function InsuranceNewsPage() {
   const [view, setView] = useLocalStorage<View>("news:view", "grid");
   const [bookmarks, setBookmarks] = useLocalStorage<Record<string, boolean>>("news:bookmarks", {});
 
+  const [isMounted, setIsMounted] = React.useState(false);
+
   const [page, setPage] = React.useState(1);
   const PAGE_SIZE = 12;
 
@@ -185,6 +188,7 @@ export default function InsuranceNewsPage() {
 
   React.useEffect(() => {
     fetchNews();
+    setIsMounted(true);
   }, [fetchNews]);
 
   const categories = React.useMemo(() => [L.all, ...uniqueCategories(news)], [news]);
@@ -259,7 +263,7 @@ export default function InsuranceNewsPage() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary" className="rounded-full px-2.5 py-1">{L.items(filtered.length)}</Badge>
             <Separator orientation="vertical" className="h-4" />
-            {lastUpdated && <span className="hidden sm:inline">{L.updated(lastUpdated)}</span>}
+            {isMounted && lastUpdated && <span className="hidden sm:inline">{L.updated(lastUpdated)}</span>}
           </div>
 
           <div className="flex items-center gap-2">
@@ -293,14 +297,18 @@ export default function InsuranceNewsPage() {
             </DropdownMenu>
 
             {/* View toggle */}
-            <div className="hidden sm:flex rounded-lg border overflow-hidden">
-              <Button variant={view === "grid" ? "secondary" : "ghost"} size="icon" aria-label="Grid view" onClick={() => setView("grid")}>
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button variant={view === "list" ? "secondary" : "ghost"} size="icon" aria-label="List view" onClick={() => setView("list")}>
-                <ListIcon className="h-4 w-4" />
-              </Button>
-            </div>
+            {!isMounted ? (
+                <Skeleton className="h-10 w-[72px] hidden sm:block" />
+            ) : (
+                <div className="hidden sm:flex rounded-lg border overflow-hidden">
+                    <Button variant={view === "grid" ? "secondary" : "ghost"} size="icon" aria-label="Grid view" onClick={() => setView("grid")}>
+                        <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button variant={view === "list" ? "secondary" : "ghost"} size="icon" aria-label="List view" onClick={() => setView("list")}>
+                        <ListIcon className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
           </div>
         </div>
 
@@ -513,3 +521,5 @@ function EmptyState() {
     </Card>
   );
 }
+
+    
