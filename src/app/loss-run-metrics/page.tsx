@@ -1,4 +1,4 @@
-'use server';
+'use client';
 
 import { AppShell } from '@/components/app-shell';
 import {
@@ -12,7 +12,6 @@ import { firestore } from '@/lib/firebase';
 import { formatCurrency, formatPercent } from '@/lib/utils';
 import {
   AlertCircle,
-  BarChart,
   CalendarDays,
   CircleDollarSign,
   ClipboardList,
@@ -21,7 +20,6 @@ import {
   DollarSign,
   Hash,
   TrendingUp,
-  Users,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -35,6 +33,8 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
+import { useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 async function getMetrics() {
   try {
@@ -64,10 +64,12 @@ function MetricCard({
   title,
   value,
   icon,
+  isLoading = false,
 }: {
   title: string;
   value: string | number;
   icon: React.ElementType;
+  isLoading?: boolean;
 }) {
   const Icon = icon;
   return (
@@ -77,16 +79,35 @@ function MetricCard({
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        {isLoading ? (
+          <Skeleton className="h-8 w-3/4" />
+        ) : (
+          <div className="text-2xl font-bold">{value}</div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-export default async function LossRunMetricsPage() {
-  const { data, error } = await getMetrics();
+export default function LossRunMetricsPage() {
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (error || !data) {
+  useEffect(() => {
+    async function loadData() {
+      const { data, error } = await getMetrics();
+      if (error) {
+        setError(error);
+      } else {
+        setData(data);
+      }
+      setLoading(false);
+    }
+    loadData();
+  }, []);
+
+  if (error && !loading) {
     return (
       <AppShell>
         <main className="flex-1 p-4 sm:p-6">
@@ -116,7 +137,7 @@ export default async function LossRunMetricsPage() {
           <h1 className="text-3xl font-bold tracking-tight">
             Loss Run Metrics
           </h1>
-          {data?.updatedAt && (
+          {loading ? <Skeleton className="h-4 w-48" /> : data?.updatedAt && (
             <p className="text-sm text-muted-foreground">
               Last updated: {data.updatedAt}
             </p>
@@ -128,21 +149,25 @@ export default async function LossRunMetricsPage() {
             title="Total Incurred"
             value={formatCurrency(data?.totalIncurred)}
             icon={DollarSign}
+            isLoading={loading}
           />
           <MetricCard
             title="Loss Ratio"
             value={formatPercent(data?.lossRatio)}
             icon={TrendingUp}
+            isLoading={loading}
           />
           <MetricCard
             title="Claim Count"
             value={data?.claimCount}
             icon={Hash}
+            isLoading={loading}
           />
           <MetricCard
             title="Avg. Severity"
             value={formatCurrency(data?.avgSeverity)}
             icon={CircleDollarSign}
+            isLoading={loading}
           />
         </div>
 
@@ -152,31 +177,37 @@ export default async function LossRunMetricsPage() {
               title="Total Loss Paid"
               value={formatCurrency(data?.totalLossPaid)}
               icon={Coins}
+              isLoading={loading}
             />
             <MetricCard
               title="Total Expense Paid"
               value={formatCurrency(data?.totalExpensePaid)}
               icon={Coins}
+              isLoading={loading}
             />
             <MetricCard
               title="Average Premium"
               value={formatCurrency(data?.avgPremium)}
               icon={ClipboardList}
+              isLoading={loading}
             />
             <MetricCard
               title="Outstanding Claims"
               value={data?.outstandingClaims}
               icon={AlertCircle}
+              isLoading={loading}
             />
              <MetricCard
               title="Avg. Exposure Days"
-              value={Math.round(data?.avgExposureDays) + ' days'}
+              value={loading ? '...' : Math.round(data?.avgExposureDays) + ' days'}
               icon={CalendarDays}
+              isLoading={loading}
             />
             <MetricCard
               title="Avg. Time to Close"
-              value={Math.round(data?.avgCloseDays) + ' days'}
+              value={loading ? '...' : Math.round(data?.avgCloseDays) + ' days'}
               icon={Clock}
+              isLoading={loading}
             />
           </div>
           
@@ -186,18 +217,24 @@ export default async function LossRunMetricsPage() {
               <CardDescription>Claim loss distribution</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">25th Percentile</span>
-                    <span className="font-bold">{formatCurrency(data?.severityPct['25'])}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">50th Percentile (Median)</span>
-                    <span className="font-bold">{formatCurrency(data?.severityPct['50'])}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">75th Percentile</span>
-                    <span className="font-bold">{formatCurrency(data?.severityPct['75'])}</span>
-                </div>
+                {loading ? <>
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-6 w-full" />
+                </> : <>
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">25th Percentile</span>
+                      <span className="font-bold">{formatCurrency(data?.severityPct['25'])}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">50th Percentile (Median)</span>
+                      <span className="font-bold">{formatCurrency(data?.severityPct['50'])}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">75th Percentile</span>
+                      <span className="font-bold">{formatCurrency(data?.severityPct['75'])}</span>
+                  </div>
+                </>}
             </CardContent>
           </Card>
         </div>
@@ -209,6 +246,7 @@ export default async function LossRunMetricsPage() {
                 <CardTitle>Top 5 Insured by Loss</CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {loading ? <Skeleton className="w-full h-[300px]" /> :
                     <ResponsiveContainer width="100%" height={300}>
                         <RechartsBarChart layout="vertical" data={data?.topInsured} margin={{ right: 20 }}>
                         <XAxis type="number" hide />
@@ -220,6 +258,7 @@ export default async function LossRunMetricsPage() {
                         <Bar dataKey="loss" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                         </RechartsBarChart>
                     </ResponsiveContainer>
+                  }
                 </CardContent>
             </Card>
              <Card className="lg:col-span-3">
@@ -227,6 +266,7 @@ export default async function LossRunMetricsPage() {
                 <CardTitle>Loss by Claim Type</CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {loading ? <Skeleton className="w-full h-[300px]" /> :
                     <ResponsiveContainer width="100%" height={300}>
                         <RechartsBarChart layout="vertical" data={Object.entries(data?.lossByType || {}).map(([name, value]) => ({name, value}))} margin={{ right: 20 }}>
                         <XAxis type="number" hide />
@@ -238,6 +278,7 @@ export default async function LossRunMetricsPage() {
                         <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                         </RechartsBarChart>
                     </ResponsiveContainer>
+                  }
                 </CardContent>
             </Card>
         </div>
@@ -247,6 +288,7 @@ export default async function LossRunMetricsPage() {
                 <CardTitle>Monthly Paid vs Premium</CardTitle>
             </CardHeader>
             <CardContent>
+                 {loading ? <Skeleton className="w-full h-[400px]" /> :
                  <ResponsiveContainer width="100%" height={400}>
                     <LineChart data={data?.monthlyTrend}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -258,6 +300,7 @@ export default async function LossRunMetricsPage() {
                         <Line type="monotone" dataKey="premium" stroke="hsl(var(--chart-2))" name="Premium"/>
                     </LineChart>
                 </ResponsiveContainer>
+                }
             </CardContent>
         </Card>
 
