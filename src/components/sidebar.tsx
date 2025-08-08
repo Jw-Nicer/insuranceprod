@@ -51,10 +51,12 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton>
-                <PieChart />
-                Benchmarking
-              </SidebarMenuButton>
+              <Link href="/loss-run-metrics" passHref>
+                <SidebarMenuButton isActive={pathname === '/loss-run-metrics'}>
+                  <PieChart />
+                  Metrics
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
