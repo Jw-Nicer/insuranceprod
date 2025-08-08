@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -892,7 +893,7 @@ function NewsCardList({
     <Card className="hover:shadow-lg transition-all overflow-hidden break-words">
       <div className="flex gap-4 p-4 sm:p-6">
         {item.thumbnail && (
-          // eslint-disable--next-line @next/next/no-img-element
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={item.thumbnail} alt="thumbnail" className="w-44 rounded-lg aspect-video object-cover" data-ai-hint="news article"/>
         )}
         <div className="flex-1 min-w-0">
