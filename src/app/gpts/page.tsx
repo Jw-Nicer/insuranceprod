@@ -140,90 +140,88 @@ export default function GptsPage() {
 
   return (
     <AppShell>
-      <main className="flex-1 p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex flex-col">
-            <h1 className="text-3xl font-bold tracking-tight">
-              GPT Collection
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              A curated list of helpful GPTs for your organization.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <a
-              href="https://erauk-my.sharepoint.com/:x:/r/personal/jnicer_eragroup_com/Documents/Enhance%20Insurance%20GPTs/Insurance%20GPTs%20Development%20Tracker.xlsx?d=wa227041a57f44de6b5803d6a484ce7e6&csf=1&web=1&e=yBiWLE"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline">
-                <Sheet className="mr-2 h-4 w-4" />
-                Development Tracker
-              </Button>
-            </a>
-            <Button onClick={openAddDialog}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add GPT
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col">
+          <h1 className="text-3xl font-bold tracking-tight">
+            GPT Collection
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            A curated list of helpful GPTs for your organization.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href="https://erauk-my.sharepoint.com/:x:/r/personal/jnicer_eragroup_com/Documents/Enhance%20Insurance%20GPTs/Insurance%20GPTs%20Development%20Tracker.xlsx?d=wa227041a57f44de6b5803d6a484ce7e6&csf=1&web=1&e=yBiWLE"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline">
+              <Sheet className="mr-2 h-4 w-4" />
+              Development Tracker
             </Button>
-          </div>
+          </a>
+          <Button onClick={openAddDialog}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add GPT
+          </Button>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {gpts.map((gpt, index) => (
-            <Card
-              key={index}
-              className="flex flex-col hover:shadow-lg transition-shadow duration-300"
-            >
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle>{gpt.name}</CardTitle>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(index)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeletingIndex(index)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete this GPT from the collection.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setDeletingIndex(null)}>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDeleteGpt}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-                <CardDescription className="h-10 pt-1">
-                  {gpt.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow"></CardContent>
-              <CardFooter>
-                <a
-                  href={gpt.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full"
-                >
-                  <Button variant="outline" className="w-full">
-                    Open GPT
-                    <ArrowUpRight className="ml-2 h-4 w-4" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {gpts.map((gpt, index) => (
+          <Card
+            key={index}
+            className="flex flex-col hover:shadow-lg transition-shadow duration-300"
+          >
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <CardTitle>{gpt.name}</CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(index)}>
+                    <Pencil className="h-4 w-4" />
                   </Button>
-                </a>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </main>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeletingIndex(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete this GPT from the collection.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeletingIndex(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteGpt}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+              <CardDescription className="h-10 pt-1">
+                {gpt.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow"></CardContent>
+            <CardFooter>
+              <a
+                href={gpt.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full"
+              >
+                <Button variant="outline" className="w-full">
+                  Open GPT
+                  <ArrowUpRight className="ml-2 h-4 w-4" />
+                </Button>
+              </a>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">

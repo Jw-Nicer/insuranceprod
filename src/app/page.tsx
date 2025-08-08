@@ -69,6 +69,7 @@ export default function Home() {
 
   return (
     <AppShell>
+        <div className="mx-auto w-full max-w-[1200px] p-4 sm:p-6">
         {!claims ? (
           <FileUploader
             onFileProcess={handleFileProcess}
@@ -84,6 +85,7 @@ export default function Home() {
             onReset={reset}
           />
         )}
+      </div>
     </AppShell>
   );
 }

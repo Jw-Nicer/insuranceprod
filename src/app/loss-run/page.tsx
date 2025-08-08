@@ -188,71 +188,69 @@ export default function LossRunPage() {
 
   return (
     <AppShell>
-      <main className="flex-1 p-4 sm:p-6">
-        <LossRunMetrics />
-        {!premiumHistory ? (
-          <>
-            <LossRunInstructions />
-            <div className="mt-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Upload Claims Table</CardTitle>
-                  <CardDescription>
-                    Drag & drop your finalized claims CSV file here or click to select a file.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center p-6 pt-0">
-                  <div
-                    {...getRootProps()}
-                    className={`border-2 border-dashed rounded-lg p-12 w-full cursor-pointer transition-colors ${
-                      isDragActive ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <input {...getInputProps()} accept=".csv" />
-                    <div className="flex flex-col items-center gap-4 text-muted-foreground">
-                      <UploadCloud className="w-12 h-12" />
-                      {isDragActive ? (
-                        <p>Drop the file here ...</p>
-                      ) : file ? (
-                        <p className="font-semibold text-foreground">{file.name}</p>
-                      ) : (
-                        <p>Drag 'n' drop a file here, or click to select a file</p>
-                      )}
-                    </div>
+      <LossRunMetrics />
+      {!premiumHistory ? (
+        <>
+          <LossRunInstructions />
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload Claims Table</CardTitle>
+                <CardDescription>
+                  Drag & drop your finalized claims CSV file here or click to select a file.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center justify-center p-6 pt-0">
+                <div
+                  {...getRootProps()}
+                  className={`border-2 border-dashed rounded-lg p-12 w-full cursor-pointer transition-colors ${
+                    isDragActive ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <input {...getInputProps()} accept=".csv" />
+                  <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                    <UploadCloud className="w-12 h-12" />
+                    {isDragActive ? (
+                      <p>Drop the file here ...</p>
+                    ) : file ? (
+                      <p className="font-semibold text-foreground">{file.name}</p>
+                    ) : (
+                      <p>Drag 'n' drop a file here, or click to select a file</p>
+                    )}
                   </div>
+                </div>
 
-                  <p className="text-xs text-muted-foreground mt-4">
-                    Required columns: Cov Eff Date, Annual Premium, Loss Paid, Expense Paid
-                  </p>
+                <p className="text-xs text-muted-foreground mt-4">
+                  Required columns: Cov Eff Date, Annual Premium, Loss Paid, Expense Paid
+                </p>
 
-                  <Button
-                    onClick={handleProcessFile}
-                    disabled={!file}
-                    className="mt-6 w-full max-w-sm"
-                    size="lg"
-                  >
-                    Analyze Claim Table
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </>
-        ) : (
-          <div className="animate-in fade-in-50 duration-500">
-            <div className="flex justify-end mb-4">
-              <Button onClick={handleReset} variant="outline">
-                Upload New File
-              </Button>
-            </div>
-
-            <LossRunDashboard
-              history={premiumHistory}
-              totalClaims={totalClaims}
-              ratios={ratios}
-            />
+                <Button
+                  onClick={handleProcessFile}
+                  disabled={!file}
+                  className="mt-6 w-full max-w-sm"
+                  size="lg"
+                >
+                  Analyze Claim Table
+                </Button>
+              </CardContent>
+            </Card>
           </div>
-        )}
-      </main>
+        </>
+      ) : (
+        <div className="animate-in fade-in-50 duration-500">
+          <div className="flex justify-end mb-4">
+            <Button onClick={handleReset} variant="outline">
+              Upload New File
+            </Button>
+          </div>
+
+          <LossRunDashboard
+            history={premiumHistory}
+            totalClaims={totalClaims}
+            ratios={ratios}
+          />
+        </div>
+      )}
     </AppShell>
   );
 }
