@@ -1,29 +1,76 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText } from 'lucide-react';
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { ArrowUpRight } from 'lucide-react';
 
 export function LossRunInstructions() {
   return (
-    <Card className="mb-6">
+    <Card>
       <CardHeader>
-        <div className="flex items-center gap-3 mb-2">
-            <div className="bg-primary/10 p-2 rounded-md">
-                <FileText className="w-6 h-6 text-primary" />
-            </div>
-            <CardTitle className="text-2xl font-bold">Loss Run Analysis</CardTitle>
-        </div>
+        <CardTitle>Loss Run Analysis Instructions</CardTitle>
         <CardDescription>
-          Upload your loss run data to analyze premium history, loss ratios, and claim trends.
-          This tool helps you understand your insurance performance and identify areas for improvement.
+          Follow these steps to analyze historical loss data and calculate premiums.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <h3 className="font-semibold mb-2">Instructions:</h3>
-        <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
-          <li>Upload your loss run reports in CSV format.</li>
-          <li>Ensure the document is clear and legible for accurate data extraction.</li>
-          <li>Our AI will process the document to extract key data points.</li>
-          <li>Review the extracted data and view the analysis dashboard.</li>
-        </ul>
+      <CardContent className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2 flex items-center">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">1</span>
+            Extract Claims and Premium Data
+          </h3>
+          <div className="pl-9 space-y-2">
+            <p className="text-muted-foreground">
+              First, open the Loss Run Analyzer GPT to process your documents.
+            </p>
+            <a href="https://chatgpt.com/g/g-68642191c5f88191971f0b7d80ea419c-loss-run-analyzer" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline">
+                    Open Loss Run Analyzer GPT
+                    <ArrowUpRight className="ml-2 h-4 w-4" />
+                </Button>
+            </a>
+            <p className="text-muted-foreground">
+              Upload your claims documents to extract loss data.
+            </p>
+            <div className="pt-2">
+                <p className="font-medium">If premium data is missing:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 mt-1">
+                    <li>Manually input the premium amount.</li>
+                    <li>Ask the GPT to integrate the premium with the claims data.</li>
+                    <li>Download the finalized claims table.</li>
+                </ul>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2 flex items-center">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">2</span>
+              Upload Your File
+          </h3>
+          <p className="text-muted-foreground pl-9">
+            Upload the finalized table (CSV or Excel) into this tool to begin the analysis.
+          </p>
+        </div>
+        
+        <Separator />
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2 flex items-center">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">3</span>
+            Run Premium Calculations
+          </h3>
+          <p className="text-muted-foreground pl-9">
+            Once your data is uploaded, choose a scenario to calculate:
+          </p>
+          <ul className="list-disc list-inside text-muted-foreground space-y-1 mt-2 pl-9">
+            <li><span className="font-semibold text-foreground">Premium Backcasting:</span> Reconstructs what the premium should have been based on past claims.</li>
+            <li><span className="font-semibold text-foreground">Future Premium Projection:</span> Estimates future premiums using historical loss patterns.</li>
+          </ul>
+        </div>
+        
       </CardContent>
     </Card>
   );
