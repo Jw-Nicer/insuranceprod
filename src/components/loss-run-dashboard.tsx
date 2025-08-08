@@ -132,30 +132,38 @@ export function LossRunDashboard({
   return (
     <div className="grid gap-6">
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-            title="Total Claims"
-            value={totalClaims?.toLocaleString() ?? "N/A"}
-            icon={Hash}
-            description="Total number of claims in the uploaded data."
-        />
-        <MetricCard
-            title="Paid Loss Ratio"
-            value={formatPercent(ratios.paidLossRatio)}
-            icon={TrendingUp}
-            description="Shows how much of your premiums are being paid out as losses."
-        />
-        <MetricCard
-            title="Expense Ratio"
-            value={formatPercent(ratios.expenseRatio)}
-            icon={Percent}
-            description="Tracks claims-handling costs relative to premium."
-        />
-        <MetricCard
-            title="Combined Ratio"
-            value={formatPercent(ratios.combinedRatio)}
-            icon={Combine}
-            description="Measures underwriting profitability. (Loss + Expense)"
-        />
+        <div>
+          <MetricCard
+              title="Total Claims"
+              value={totalClaims?.toLocaleString() ?? "N/A"}
+              icon={Hash}
+              description="Total number of claims in the uploaded data."
+          />
+        </div>
+        <div>
+          <MetricCard
+              title="Paid Loss Ratio"
+              value={formatPercent(ratios.paidLossRatio)}
+              icon={TrendingUp}
+              description="Shows how much of your premiums are being paid out as losses."
+          />
+        </div>
+        <div>
+          <MetricCard
+              title="Expense Ratio"
+              value={formatPercent(ratios.expenseRatio)}
+              icon={Percent}
+              description="Tracks claims-handling costs relative to premium."
+          />
+        </div>
+        <div>
+          <MetricCard
+              title="Combined Ratio"
+              value={formatPercent(ratios.combinedRatio)}
+              icon={Combine}
+              description="Measures underwriting profitability. (Loss + Expense)"
+          />
+        </div>
       </div>
       <Card>
         <CardHeader>
