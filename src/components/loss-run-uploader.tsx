@@ -14,7 +14,7 @@ async function processLossRun(file: File): Promise<UploadedData> {
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   // In a real application, you would send the file to a backend service
-  // that uses AI to parse the PDF and extract the data.
+  // that uses AI to parse the Excel file and extract the data.
   // For this example, we'll return mock data.
   const mockData: UploadedData = {
     history: [
@@ -47,11 +47,16 @@ export function LossRunUploader({ onDataUploaded }: LossRunUploaderProps) {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.type !== 'application/pdf') {
+      const validTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-excel', // .xls
+        'text/csv' // .csv
+      ];
+      if (!validTypes.includes(file.type) && !file.name.endsWith('.csv') && !file.name.endsWith('.xls') && !file.name.endsWith('.xlsx')) {
         toast({
             variant: "destructive",
             title: "Invalid File Type",
-            description: "Please upload a PDF file.",
+            description: "Please upload an Excel or CSV file.",
         })
         return;
       }
@@ -81,9 +86,9 @@ export function LossRunUploader({ onDataUploaded }: LossRunUploaderProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Upload Loss Run PDF</CardTitle>
+        <CardTitle>Upload Loss Run Excel</CardTitle>
         <CardDescription>
-          Select your loss run report in PDF format to begin the analysis.
+          Select your loss run report in Excel format to begin the analysis.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -95,7 +100,7 @@ export function LossRunUploader({ onDataUploaded }: LossRunUploaderProps) {
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept="application/pdf"
+            accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
             className="hidden"
             disabled={isUploading}
           />
@@ -107,13 +112,13 @@ export function LossRunUploader({ onDataUploaded }: LossRunUploaderProps) {
           ) : (
              <div className="flex flex-col items-center gap-2">
                 <UploadCloud className="w-12 h-12 text-muted-foreground" />
-                <p className="text-muted-foreground">Click or drag & drop to upload PDF</p>
+                <p className="text-muted-foreground">Click or drag & drop to upload Excel/CSV</p>
                 {fileName && <p className="text-xs text-muted-foreground mt-2">Last file: {fileName}</p>}
             </div>
           )}
         </div>
         <Button onClick={handleButtonClick} disabled={isUploading} className="w-full mt-4">
-          {isUploading ? 'Processing...' : 'Select PDF File'}
+          {isUploading ? 'Processing...' : 'Select Excel File'}
         </Button>
       </CardContent>
     </Card>

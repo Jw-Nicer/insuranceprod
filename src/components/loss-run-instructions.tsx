@@ -19,7 +19,7 @@ export function LossRunInstructions() {
       <CardContent>
         <h3 className="font-semibold mb-2">Instructions:</h3>
         <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
-          <li>Upload your loss run reports in PDF format.</li>
+          <li>Upload your loss run reports in Excel or CSV format.</li>
           <li>Ensure the document is clear and legible for accurate data extraction.</li>
           <li>Our AI will process the document to extract key data points.</li>
           <li>Review the extracted data and view the analysis dashboard.</li>
