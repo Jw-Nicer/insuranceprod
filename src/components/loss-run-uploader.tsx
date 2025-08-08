@@ -1,126 +1,202 @@
 'use client';
 
-import type { UploadedData } from '@/app/loss-run/page';
-import { useState, useRef } from 'react';
-import { UploadCloud, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-
-// Mock AI processing function
-async function processLossRun(file: File): Promise<UploadedData> {
-  console.log(`Processing ${file.name}...`);
-  // Simulate network delay and processing time
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  // In a real application, you would send the file to a backend service
-  // that uses AI to parse the Excel file and extract the data.
-  // For this example, we'll return mock data.
-  const mockData: UploadedData = {
-    history: [
-      { year: 2020, premium: 50000 },
-      { year: 2021, premium: 52000 },
-      { year: 2022, premium: 55000 },
-      { year: 2023, premium: 53000 },
-    ],
-    totalLossPaid: 75000,
-    totalExpensePaid: 15000,
-    totalPremium: 210000,
-    totalClaims: 42,
-  };
-
-  console.log("Processing complete.");
-  return mockData;
-}
-
+import Papa from 'papaparse';
+import type { UploadedData } from '@/app/loss-run/page';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 interface LossRunUploaderProps {
   onDataUploaded: (data: UploadedData, json: string) => void;
 }
 
 export function LossRunUploader({ onDataUploaded }: LossRunUploaderProps) {
-  const [isUploading, setIsUploading] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
   const { toast } = useToast();
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const validTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'application/vnd.ms-excel', // .xls
-        'text/csv' // .csv
-      ];
-      if (!validTypes.includes(file.type) && !file.name.endsWith('.csv') && !file.name.endsWith('.xls') && !file.name.endsWith('.xlsx')) {
+  const parseCsv = (csvText: string): { data: UploadedData, json: string } | null => {
+    try {
+      const results = Papa.parse<any>(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim().toLowerCase(),
+      });
+      
+      const requiredHeaders = ['cov eff date', 'annual premium', 'loss paid', 'expense paid'];
+      const fileHeaders = results.meta.fields || [];
+      const missingHeaders = requiredHeaders.filter(h => !fileHeaders.includes(h));
+
+      if (missingHeaders.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Missing Required Columns",
+          description: `The CSV is missing the following columns: ${missingHeaders.join(', ')}`,
+        });
+        return null;
+      }
+      
+      let totalLossPaid = 0;
+      let totalExpensePaid = 0;
+      let totalPremium = 0;
+
+      const raw = results.data
+        .filter(row => row['cov eff date'])
+        .map(row => {
+            const premium = parseFloat(String(row['annual premium']).replace(/[$,]/g, '')) || 0;
+            const lossPaid = parseFloat(String(row['loss paid']).replace(/[$,]/g, '')) || 0;
+            const expensePaid = parseFloat(String(row['expense paid']).replace(/[$,]/g, '')) || 0;
+            
+            totalLossPaid += lossPaid;
+            totalExpensePaid += expensePaid;
+            
+            return {
+              year: new Date(row['cov eff date']).getFullYear(),
+              premium,
+              lossPaid,
+              expensePaid
+            }
+        });
+        
+      const totalClaims = raw.length;
+
+      const premiumByYear: { [year: number]: number } = {};
+      raw.forEach(({ year, premium }) => {
+        if (!isNaN(year) && premium > 0) {
+            premiumByYear[year] = premium;
+        }
+      });
+      totalPremium = Object.values(premiumByYear).reduce((acc, p) => acc + p, 0);
+
+
+      const grouped: { [year: number]: { sum: number; count: number } } = {};
+      raw.forEach(({ year, premium }) => {
+        if (!isNaN(year) && !isNaN(premium)) {
+          if (!grouped[year]) {
+            grouped[year] = { sum: 0, count: 0 };
+          }
+          grouped[year].sum += premium;
+          grouped[year].count += 1;
+        }
+      });
+      
+      const history = Object.entries(grouped)
+        .map(([yr, { sum, count }]) => ({
+          year: +yr,
+          premium: +(sum / count).toFixed(2),
+        }))
+        .sort((a, b) => a.year - b.year);
+        
+      if (history.length === 0) {
         toast({
             variant: "destructive",
-            title: "Invalid File Type",
-            description: "Please upload an Excel or CSV file.",
-        })
-        return;
+            title: "No Valid Data Found",
+            description: "Could not find any valid premium data in the uploaded file.",
+        });
+        return null;
       }
-      setFileName(file.name);
-      setIsUploading(true);
-      try {
-        const data = await processLossRun(file);
-        const json = JSON.stringify(data, null, 2);
-        onDataUploaded(data, json);
-      } catch (error) {
-        console.error("Failed to process loss run:", error);
-         toast({
-            variant: "destructive",
-            title: "Processing Error",
-            description: "Failed to process the uploaded file. Please try again.",
-        })
-      } finally {
-        setIsUploading(false);
-      }
+      
+      const data = { history, totalLossPaid, totalExpensePaid, totalPremium, totalClaims };
+
+      return { data, json: JSON.stringify(results.data) };
+
+    } catch (error) {
+      console.error('CSV Parsing Error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'CSV Parsing Error',
+        description: error instanceof Error ? error.message : 'Could not parse the CSV file. Please check the format.',
+      });
+      return null;
     }
   };
 
-  const handleButtonClick = () => {
-    fileInputRef.current?.click();
+  const handleProcessFile = () => {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      if (content) {
+        const parsedData = parseCsv(content);
+        if (parsedData) {
+          onDataUploaded(parsedData.data, parsedData.json);
+          toast({
+            title: 'Success',
+            description: `Successfully imported and processed premium history.`,
+          });
+        }
+      }
+    };
+    reader.readAsText(file);
   };
 
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      const acceptedFile = acceptedFiles[0];
+      if (acceptedFile.type === 'text/csv' || acceptedFile.name.endsWith('.csv')) {
+        setFile(acceptedFile);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid File Type',
+          description: 'Please upload a CSV file.',
+        });
+      }
+    }
+  }, [toast]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    maxFiles: 1,
+    multiple: false,
+  });
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Upload Loss Run Excel</CardTitle>
-        <CardDescription>
-          Select your loss run report in Excel format to begin the analysis.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div
-          className="w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center transition-colors border-border cursor-pointer hover:bg-muted"
-          onClick={handleButtonClick}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-            className="hidden"
-            disabled={isUploading}
-          />
-          {isUploading ? (
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="w-12 h-12 text-muted-foreground animate-spin" />
-              <p className="text-muted-foreground">Processing: {fileName}</p>
+    <div className="mt-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Claims Table</CardTitle>
+          <CardDescription>
+            Drag & drop your finalized claims CSV file here or click to select a file.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center p-6 pt-0">
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-12 w-full cursor-pointer transition-colors ${
+              isDragActive ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} accept=".csv" />
+            <div className="flex flex-col items-center gap-4 text-muted-foreground">
+              <UploadCloud className="w-12 h-12" />
+              {isDragActive ? (
+                <p>Drop the file here ...</p>
+              ) : file ? (
+                <p className="font-semibold text-foreground">{file.name}</p>
+              ) : (
+                <p>Drag 'n' drop a file here, or click to select a file</p>
+              )}
             </div>
-          ) : (
-             <div className="flex flex-col items-center gap-2">
-                <UploadCloud className="w-12 h-12 text-muted-foreground" />
-                <p className="text-muted-foreground">Click or drag & drop to upload Excel/CSV</p>
-                {fileName && <p className="text-xs text-muted-foreground mt-2">Last file: {fileName}</p>}
-            </div>
-          )}
-        </div>
-        <Button onClick={handleButtonClick} disabled={isUploading} className="w-full mt-4">
-          {isUploading ? 'Processing...' : 'Select Excel File'}
-        </Button>
-      </CardContent>
-    </Card>
+          </div>
+
+          <p className="text-xs text-muted-foreground mt-4">
+            Required columns: Cov Eff Date, Annual Premium, Loss Paid, Expense Paid
+          </p>
+
+          <Button
+            onClick={handleProcessFile}
+            disabled={!file}
+            className="mt-6 w-full max-w-sm"
+            size="lg"
+          >
+            Analyze Claim Table
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
