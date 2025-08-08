@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import type { PremiumHistory } from '@/types';
 import { formatCurrency, formatPercent } from '@/lib/utils';
+import { MetricCard } from './metric-card';
 
 const scenarios = [
   { label: '3%-4%', rate: 0.035 },
@@ -131,64 +132,30 @@ export function LossRunDashboard({
   return (
     <div className="grid gap-6">
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Claims</CardTitle>
-            <Hash className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {totalClaims?.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total number of claims in the uploaded data.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Paid Loss Ratio
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatPercent(ratios.paidLossRatio)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Shows how much of your premiums are being paid out as losses.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expense Ratio</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatPercent(ratios.expenseRatio)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Tracks claims-handling costs relative to premium.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Combined Ratio</CardTitle>
-            <Combine className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatPercent(ratios.combinedRatio)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Measures underwriting profitability. (Loss + Expense)
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+            title="Total Claims"
+            value={totalClaims?.toLocaleString() ?? "N/A"}
+            icon={Hash}
+            description="Total number of claims in the uploaded data."
+        />
+        <MetricCard
+            title="Paid Loss Ratio"
+            value={formatPercent(ratios.paidLossRatio)}
+            icon={TrendingUp}
+            description="Shows how much of your premiums are being paid out as losses."
+        />
+        <MetricCard
+            title="Expense Ratio"
+            value={formatPercent(ratios.expenseRatio)}
+            icon={Percent}
+            description="Tracks claims-handling costs relative to premium."
+        />
+        <MetricCard
+            title="Combined Ratio"
+            value={formatPercent(ratios.combinedRatio)}
+            icon={Combine}
+            description="Measures underwriting profitability. (Loss + Expense)"
+        />
       </div>
       <Card>
         <CardHeader>

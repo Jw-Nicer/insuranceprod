@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MetricCardProps {
@@ -8,6 +8,7 @@ interface MetricCardProps {
   value: string | number;
   icon: React.ElementType;
   isLoading?: boolean;
+  description?: string;
 }
 
 export function MetricCard({
@@ -15,6 +16,7 @@ export function MetricCard({
   value,
   icon: Icon,
   isLoading = false,
+  description,
 }: MetricCardProps) {
   return (
     <Card>
@@ -24,9 +26,15 @@ export function MetricCard({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <Skeleton className="h-8 w-3/4" />
+          <>
+            <Skeleton className="h-8 w-3/4 mb-2" />
+            {description && <Skeleton className="h-4 w-full" />}
+          </>
         ) : (
-          <div className="text-2xl font-bold">{value}</div>
+          <>
+            <div className="text-2xl font-bold">{value}</div>
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
+          </>
         )}
       </CardContent>
     </Card>
