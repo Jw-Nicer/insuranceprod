@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { LossRunInstructions } from '@/components/loss-run-instructions';
 import { LossRunUploader } from '@/components/loss-run-uploader';
 import { LossRunDashboard } from '@/components/loss-run-dashboard';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
   Card,
   CardContent,
@@ -14,8 +13,35 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { TrendingUp, Combine, Percent, Hash } from 'lucide-react';
-import { formatPercent } from '@/lib/utils';
+import {
+  TrendingUp,
+  Combine,
+  Percent,
+  Hash,
+  AlertCircle,
+  CalendarDays,
+  CircleDollarSign,
+  ClipboardList,
+  Clock,
+  Coins,
+  DollarSign,
+} from 'lucide-react';
+import { formatPercent, formatCurrency } from '@/lib/utils';
+import { firestore } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  ResponsiveContainer,
+  BarChart as RechartsBarChart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar,
+  LineChart,
+  Line,
+  CartesianGrid,
+  Legend,
+} from 'recharts';
 
 
 export interface PremiumHistory {
@@ -31,6 +57,57 @@ export interface UploadedData {
   totalClaims: number;
 }
 
+async function getMetrics() {
+  try {
+    const docRef = doc(firestore, 'dashboardMetrics', 'current');
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+      return { data: null, error: 'Metrics data not found.' };
+    }
+    const data = docSnap.data();
+
+    if (data && data.updatedAt) {
+      data.updatedAt = new Date(data.updatedAt.seconds * 1000).toLocaleString();
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error(err);
+    const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while fetching metrics.';
+    return { data: null, error: errorMessage };
+  }
+}
+
+function MetricCard({
+  title,
+  value,
+  icon,
+  isLoading = false,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  isLoading?: boolean;
+}) {
+  const Icon = icon;
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-8 w-3/4" />
+        ) : (
+          <div className="text-2xl font-bold">{value}</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function LossRunPage() {
   const [premiumHistory, setPremiumHistory] = useState<PremiumHistory[] | null>(null);
@@ -41,6 +118,23 @@ export default function LossRunPage() {
     expenseRatio: number | null;
     combinedRatio: number | null;
   }>({ paidLossRatio: null, expenseRatio: null, combinedRatio: null });
+
+  const [metricsData, setMetricsData] = useState<any>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      const { data, error } = await getMetrics();
+      if (error) {
+        setMetricsError(error);
+      } else {
+        setMetricsData(data);
+      }
+      setLoadingMetrics(false);
+    }
+    loadData();
+  }, []);
 
   const handleDataUploaded = (data: UploadedData, json: string) => {
     setPremiumHistory(data.history);
@@ -64,6 +158,61 @@ export default function LossRunPage() {
   return (
     <AppShell>
       <main className="flex-1 p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Loss Run Analysis
+          </h1>
+          {loadingMetrics ? <Skeleton className="h-4 w-48" /> : metricsData?.updatedAt && (
+            <p className="text-sm text-muted-foreground">
+              Last updated: {metricsData.updatedAt}
+            </p>
+          )}
+        </div>
+
+        {metricsError && !loadingMetrics && (
+          <Card className="bg-destructive/10 border-destructive mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle /> Error Loading Metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{metricsError}</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Please ensure the backend function has run successfully and the
+                environment variables for Firebase are correctly configured.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <MetricCard
+            title="Total Incurred"
+            value={formatCurrency(metricsData?.totalIncurred)}
+            icon={DollarSign}
+            isLoading={loadingMetrics}
+          />
+          <MetricCard
+            title="Loss Ratio"
+            value={formatPercent(metricsData?.lossRatio)}
+            icon={TrendingUp}
+            isLoading={loadingMetrics}
+          />
+          <MetricCard
+            title="Claim Count"
+            value={metricsData?.claimCount}
+            icon={Hash}
+            isLoading={loadingMetrics}
+          />
+          <MetricCard
+            title="Avg. Severity"
+            value={formatCurrency(metricsData?.avgSeverity)}
+            icon={CircleDollarSign}
+            isLoading={loadingMetrics}
+          />
+        </div>
+
         {!premiumHistory ? (
           <>
             <LossRunInstructions />

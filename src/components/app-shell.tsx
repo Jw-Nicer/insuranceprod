@@ -41,12 +41,6 @@ const navigation: NavGroup[] = [
         isLive: true,
       },
       {
-        href: '/loss-run-metrics',
-        label: 'Metrics',
-        icon: BarChart2,
-        isLive: true,
-      },
-      {
         href: '/benchmarking',
         label: 'Benchmarking',
         icon: Scale,
