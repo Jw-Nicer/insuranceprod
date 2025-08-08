@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { analyzeInsuranceClaims, AnalyzeInsuranceClaimsOutput } from '@/ai/flows/analyze-insurance-claims';
 import FileUploader from '@/components/file-uploader';
 import InsuranceDashboard from '@/components/insurance-dashboard';
+import { AppSidebar } from '@/components/sidebar';
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { parseCsv } from '@/lib/csv-helpers';
 import { useToast } from "@/hooks/use-toast"
 
@@ -21,13 +23,10 @@ export default function Home() {
 
   const handleFileProcess = (fileContent: string) => {
     try {
-      setIsLoading(true);
       setCsvData(fileContent);
-
       const records: Claim[] = parseCsv(fileContent);
-
       setClaims(records);
-      setAnalysis(null); // Reset analysis on new file
+      setAnalysis(null);
     } catch (err) {
       console.error(err);
       toast({
@@ -37,11 +36,9 @@ export default function Home() {
       })
       setClaims(null);
       setCsvData(null);
-    } finally {
-      setIsLoading(false);
     }
   };
-
+  
   const handleAnalyze = async () => {
     if (!csvData) {
       toast({
@@ -72,24 +69,31 @@ export default function Home() {
     setClaims(null);
     setCsvData(null);
     setAnalysis(null);
+    setIsLoading(false);
   };
 
   return (
-    <>
-      {!claims ? (
-        <FileUploader
-          onFileProcess={handleFileProcess}
-          isLoading={isLoading}
-        />
-      ) : (
-        <InsuranceDashboard
-          claims={claims}
-          analysis={analysis}
-          onAnalyze={handleAnalyze}
-          isLoadingAnalysis={isLoading}
-          onReset={reset}
-        />
-      )}
-    </>
+    <SidebarProvider>
+      <Sidebar>
+        <AppSidebar />
+      </Sidebar>
+      <SidebarInset>
+          {!claims ? (
+            <FileUploader
+              onFileProcess={handleFileProcess}
+              onAnalyze={handleAnalyze}
+              isLoading={isLoading}
+            />
+          ) : (
+            <InsuranceDashboard
+              claims={claims}
+              analysis={analysis}
+              onAnalyze={handleAnalyze}
+              isLoadingAnalysis={isLoading}
+              onReset={reset}
+            />
+          )}
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
