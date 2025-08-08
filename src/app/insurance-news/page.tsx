@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -17,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -68,7 +68,6 @@ const L = {
   all: "All",
   read: "Read Full Article",
   copy: "Copy link",
-  copied: "Link copied!",
   open: "Opens in a new tab",
   refresh: "Refresh",
   emptyTitle: "No articles match",
@@ -99,17 +98,37 @@ const stripHtml = (html: string) => {
 };
 
 function formatAbsolute(date: Date | string) {
+    const d = typeof date === "string" ? new Date(date) : date;
+    if(isNaN(d.getTime())) return "";
+    try {
+        return new Intl.DateTimeFormat(navigator?.language || "en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        }).format(d);
+    } catch {
+        return d.toLocaleDateString();
+    }
+}
+
+function formatRelative(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   if(isNaN(d.getTime())) return "";
-  try {
-    return new Intl.DateTimeFormat(navigator?.language || "en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(d);
-  } catch {
-    return d.toLocaleDateString();
+  const diff = (d.getTime() - Date.now()) / 1000; // negative if in past
+  const rtf = new Intl.RelativeTimeFormat(navigator?.language || "en-US", { numeric: "auto" });
+  const units: [Intl.RelativeTimeFormatUnit, number][] = [
+    ["year", 60 * 60 * 24 * 365],
+    ["month", 60 * 60 * 24 * 30],
+    ["week", 60 * 60 * 24 * 7],
+    ["day", 60 * 60 * 24],
+    ["hour", 60 * 60],
+    ["minute", 60],
+  ];
+  for (const [unit, sec] of units) {
+    const value = Math.round(diff / sec);
+    if (Math.abs(value) >= 1) return rtf.format(value, unit);
   }
+  return rtf.format(Math.round(diff), "second");
 }
 
 function uniqueCategories(items: NewsItem[]) {
@@ -117,132 +136,6 @@ function uniqueCategories(items: NewsItem[]) {
   items.forEach((i) => i.categories?.forEach((c) => set.add(c.trim())));
   return Array.from(set).sort((a, b) => a.localeCompare(b));
 }
-
-/************************************
- * Components
- ************************************/
-
-const NewsCard: React.FC<{ item: NewsItem, bookmarked: boolean, onBookmark: (id: string) => void, onCopy: (url: string) => void }> = ({ item, bookmarked, onBookmark, onCopy }) => (
-    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300">
-        <CardHeader>
-            <div className="flex justify-between items-start gap-3">
-                <CardTitle className="text-base font-semibold leading-snug flex-1">
-                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="hover:underline">{item.title}</a>
-                </CardTitle>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant={bookmarked ? "secondary" : "ghost"}
-                                size="icon"
-                                className="h-8 w-8 shrink-0"
-                                onClick={() => onBookmark(item.guid)}
-                            >
-                                {bookmarked ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{bookmarked ? "Remove bookmark" : "Save for later"}</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </div>
-            <CardDescription className="pt-1 flex items-center gap-2 text-xs">
-                <CalendarDays className="h-3 w-3" />
-                {formatAbsolute(item.pubDate)}
-            </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow">
-            <p className="text-sm text-muted-foreground line-clamp-3">
-                {stripHtml(item.description)}
-            </p>
-        </CardContent>
-        <CardFooter className="flex-col !items-stretch gap-2">
-            <div className="flex gap-1.5 flex-wrap">
-                {item.categories?.slice(0, 3).map(c => <Badge key={c} variant="outline" className="text-xs">{c}</Badge>)}
-            </div>
-             <Separator className="my-2" />
-            <div className="flex gap-2">
-                <Button asChild variant="outline" className="flex-1">
-                    <a href={item.link} target="_blank" rel="noopener noreferrer">
-                        {L.read} <ExternalLink className="ml-2" />
-                    </a>
-                </Button>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => onCopy(item.link)}>
-                                <CopyIcon className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{L.copy}</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </div>
-        </CardFooter>
-    </Card>
-);
-
-const NewsListItem: React.FC<{ item: NewsItem, bookmarked: boolean, onBookmark: (id: string) => void, onCopy: (url: string) => void }> = ({ item, bookmarked, onBookmark, onCopy }) => (
-    <div className="flex items-start gap-4 py-4">
-        <div className="flex-1">
-            <a href={item.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                <p className="font-semibold">{item.title}</p>
-            </a>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                <CalendarDays className="h-3 w-3" />
-                {formatAbsolute(item.pubDate)}
-            </p>
-            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                {stripHtml(item.description)}
-            </p>
-            <div className="flex gap-1.5 flex-wrap mt-2">
-                {item.categories?.slice(0, 3).map(c => <Badge key={c} variant="outline" className="text-xs">{c}</Badge>)}
-            </div>
-        </div>
-        <div className="flex items-center gap-1">
-             <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Button
-                            variant={bookmarked ? "secondary" : "ghost"}
-                            size="icon"
-                            className="h-8 w-8 shrink-0"
-                            onClick={() => onBookmark(item.guid)}
-                        >
-                            {bookmarked ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{bookmarked ? "Remove bookmark" : "Save for later"}</TooltipContent>
-                </Tooltip>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onCopy(item.link)}>
-                            <CopyIcon className="h-4 w-4" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{L.copy}</TooltipContent>
-                </Tooltip>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                            <a href={item.link} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="h-4 w-4" />
-                            </a>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{L.read}</TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        </div>
-    </div>
-);
-
-
-const EmptyState: React.FC = () => (
-     <div className="text-center py-20 col-span-full">
-      <h2 className="text-xl font-semibold mb-2">{L.emptyTitle}</h2>
-      <p className="text-muted-foreground">{L.emptyDesc}</p>
-    </div>
-)
 
 /************************************
  * Page
@@ -255,6 +148,7 @@ type View = "grid" | "list";
 export default function InsuranceNewsPage() {
   const { toast } = useToast();
 
+  // Local state
   const [news, setNews] = React.useState<NewsItem[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -274,7 +168,7 @@ export default function InsuranceNewsPage() {
     setError(null);
     const controller = new AbortController();
     try {
-      const res = await fetch(RSS_URL, { signal: controller.signal });
+      const res = await fetch(RSS_URL, { signal: controller.signal, next: { revalidate: 43200 } });
       if (!res.ok) throw new Error("Failed to fetch news feed.");
       const data = await res.json();
       if (data.status !== "ok") throw new Error("Failed to parse news feed.");
@@ -295,6 +189,7 @@ export default function InsuranceNewsPage() {
 
   const categories = React.useMemo(() => [L.all, ...uniqueCategories(news)], [news]);
 
+  // Filtering + sorting
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = news.filter((n) =>
@@ -322,141 +217,299 @@ export default function InsuranceNewsPage() {
   const hasMore = visible.length < filtered.length;
 
   const toggleBookmark = (id: string) => {
-    setBookmarks((b) => ({ ...b, [id]: !b[id] }));
+    setBookmarks((prev) => ({ ...prev, [id]: !prev[id] }));
     toast({ title: bookmarks[id] ? L.unsaved : L.saved });
   };
-  
-  const copyUrl = async (url: string) => {
+
+  const copyLink = async (url: string) => {
     try {
       await navigator.clipboard.writeText(url);
-      toast({ title: L.copied });
-    } catch (err) {
-      toast({ variant: "destructive", title: "Copy failed", description: "Could not copy the link." });
+      toast({ title: "Copied", description: "Link copied to clipboard." });
+    } catch {
+      toast({ title: "Copy failed", description: "Unable to copy link.", variant: "destructive" });
     }
   };
 
-
   return (
     <AppShell>
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-4">
-            <div className="flex flex-col">
-            <h1 className="text-2xl font-bold tracking-tight">{L.title}</h1>
-            <p className="text-muted-foreground mt-1 text-sm">{L.subtitle}</p>
-            </div>
-            <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={fetchNews} disabled={loading}>
-                    <RefreshCw className={loading ? "animate-spin" : ""} />
-                    {L.refresh}
-                </Button>
-            </div>
-        </header>
-        
-        {/* Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div className="relative w-full max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder={L.search} className="pl-10" value={query} onChange={(e) => setQuery(e.target.value)} />
-            </div>
-            <div className="flex items-center gap-2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline"><Filter /> {L.sort}</Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>{L.sortBy}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setSort("newest")}>{L.newest}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSort("oldest")}>{L.oldest}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSort("az")}>{L.az}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSort("za")}>{L.za}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+      {/* Header */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{L.title}</h1>
+            <p className="text-muted-foreground mt-1">{L.subtitle}</p>
+          </div>
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="hidden md:inline-flex"><Filter /> {L.categories}</Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 max-h-96">
-                        <DropdownMenuLabel>{L.categories}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setCategory(L.all)}>{L.all}</DropdownMenuItem>
-                        {categories.slice(1).map(c => <DropdownMenuItem key={c} onClick={() => setCategory(c)}>{c}</DropdownMenuItem>)}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <div className="flex items-center rounded-md border p-1 bg-muted">
-                    <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} className="h-8 w-8"><LayoutGrid/></Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Grid view</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} className="h-8 w-8"><ListIcon/></Button>
-                        </TooltipTrigger>
-                        <TooltipContent>List view</TooltipContent>
-                    </Tooltip>
-                    </TooltipProvider>
-                </div>
-            </div>
+          <div className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" onClick={fetchNews} aria-label={L.refresh}>
+                    <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{lastUpdated ? L.updated(lastUpdated) : ""}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
-        <Separator className="mb-6" />
+        {/* Toolbar */}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Badge variant="secondary" className="rounded-full px-2.5 py-1">{L.items(filtered.length)}</Badge>
+            <Separator orientation="vertical" className="h-4" />
+            {lastUpdated && <span className="hidden sm:inline">{L.updated(lastUpdated)}</span>}
+          </div>
 
-        {/* Content */}
-        <div className="flex-1">
-            {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-80" />)}
-                </div>
-            ) : error ? (
-                 <Card className="col-span-full">
-                    <CardHeader>
-                        <CardTitle className="text-destructive">{L.errorTitle}</CardTitle>
-                        <CardDescription>{L.errorDesc}</CardDescription>
-                    </CardHeader>
-                    <CardContent><p>{error}</p></CardContent>
-                </Card>
-            ) : (
-                <>
-                <div className="flex justify-between items-baseline mb-4">
-                    <p className="text-sm text-muted-foreground">{L.items(filtered.length)}</p>
-                    {lastUpdated && <p className="text-sm text-muted-foreground">{L.updated(lastUpdated)}</p>}
-                </div>
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={view}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                         {view === 'grid' ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {visible.length > 0 ? visible.map(item => <NewsCard key={item.guid} item={item} bookmarked={!!bookmarks[item.guid]} onBookmark={toggleBookmark} onCopy={copyUrl}/>) : <EmptyState />}
-                            </div>
-                        ) : (
-                            <div className="divide-y">
-                                {visible.length > 0 ? visible.map(item => <NewsListItem key={item.guid} item={item} bookmarked={!!bookmarks[item.guid]} onBookmark={toggleBookmark} onCopy={copyUrl}/>) : <EmptyState />}
-                            </div>
-                        )}
-                    </motion.div>
-                </AnimatePresence>
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={L.search}
+                className="pl-8"
+                aria-label="Search news"
+              />
+            </div>
 
-                {hasMore && (
-                    <div className="text-center mt-8">
-                        <Button onClick={() => setPage(p => p+1)}>Load More</Button>
-                    </div>
-                )}
-                </>
-            )}
+            {/* Sort */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="whitespace-nowrap">
+                  {L.sort}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>{L.sortBy}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSort("newest")}>{L.newest} {sort === "newest" && <Badge className="ml-auto" variant="secondary">Active</Badge>}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSort("oldest")}>{L.oldest} {sort === "oldest" && <Badge className="ml-auto" variant="secondary">Active</Badge>}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSort("az")}>{L.az} {sort === "az" && <Badge className="ml-auto" variant="secondary">Active</Badge>}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSort("za")}>{L.za} {sort === "za" && <Badge className="ml-auto" variant="secondary">Active</Badge>}</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* View toggle */}
+            <div className="hidden sm:flex rounded-lg border overflow-hidden">
+              <Button variant={view === "grid" ? "secondary" : "ghost"} size="icon" aria-label="Grid view" onClick={() => setView("grid")}>
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button variant={view === "list" ? "secondary" : "ghost"} size="icon" aria-label="List view" onClick={() => setView("list")}>
+                <ListIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Category chips */}
+        <div className="mt-3">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex items-center gap-2 pb-2">
+              {categories.map((c) => (
+                <Button key={c} size="sm" variant={category === c ? "secondary" : "outline"} className="rounded-full" onClick={() => setCategory(c)}>
+                  {c}
+                </Button>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="mt-2 h-4 w-1/3" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-36 w-full rounded-lg" />
+                <Skeleton className="mt-3 h-4 w-full" />
+                <Skeleton className="mt-2 h-4 w-5/6" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-9 w-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Error */}
+      {!loading && error && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-destructive">{L.errorTitle}</CardTitle>
+            <CardDescription>{L.errorDesc}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={fetchNews}>{L.refresh}</Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {/* Grid/List */}
+      {!loading && !error && (
+        filtered.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <AnimatePresence mode="popLayout">
+            <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+              {visible.map((item) => (
+                <motion.div
+                  key={item.guid}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {view === "grid" ? (
+                    <NewsCardGrid item={item} isBookmarked={!!bookmarks[item.guid]} onBookmark={() => toggleBookmark(item.guid)} onCopy={() => copyLink(item.link)} />
+                  ) : (
+                    <NewsCardList item={item} isBookmarked={!!bookmarks[item.guid]} onBookmark={() => toggleBookmark(item.guid)} onCopy={() => copyLink(item.link)} />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </AnimatePresence>
+        )
+      )}
+
+      {/* Load more */}
+      {!loading && !error && hasMore && (
+        <div className="flex justify-center mt-8">
+          <Button variant="outline" onClick={() => setPage((p) => p + 1)}>Load more</Button>
+        </div>
+      )}
     </AppShell>
   );
 }
-    
+
+/************************************
+ * Presentational components
+ ************************************/
+function NewsCardGrid({ item, isBookmarked, onBookmark, onCopy }: { item: NewsItem; isBookmarked: boolean; onBookmark: () => void; onCopy: () => void }) {
+  return (
+    <Card className="flex flex-col hover:shadow-lg transition-all">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg leading-snug line-clamp-2">{item.title}</CardTitle>
+            <CardDescription className="mt-1 inline-flex items-center gap-1">
+              <CalendarDays className="h-3.5 w-3.5" />
+              <span>{formatAbsolute(item.pubDate)} • {formatRelative(item.pubDate)}</span>
+            </CardDescription>
+          </div>
+          <BookmarkButton active={isBookmarked} onClick={onBookmark} />
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1">
+        {item.thumbnail && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.thumbnail} alt="thumbnail" className="mb-3 w-full rounded-lg aspect-video object-cover" />
+        )}
+        <p className="text-sm text-muted-foreground line-clamp-3">{stripHtml(item.description)}</p>
+      </CardContent>
+      <CardFooter className="gap-2">
+        <Button asChild variant="outline" className="w-full">
+          <a href={item.link} target="_blank" rel="noopener noreferrer" aria-label={`${L.read}: ${item.title}`}>
+            {L.read}
+            <ArrowUpRight className="ml-2 h-4 w-4" />
+          </a>
+        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
+                <CopyIcon className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{L.copy}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function NewsCardList({ item, isBookmarked, onBookmark, onCopy }: { item: NewsItem; isBookmarked: boolean; onBookmark: () => void; onCopy: () => void }) {
+  return (
+    <Card className="hover:shadow-lg transition-all">
+      <div className="flex gap-4 p-6">
+        {item.thumbnail && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.thumbnail} alt="thumbnail" className="w-44 rounded-lg aspect-video object-cover" />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-lg leading-snug line-clamp-1">{item.title}</CardTitle>
+              <CardDescription className="mt-1 inline-flex items-center gap-1">
+                <CalendarDays className="h-3.5 w-3.5" />
+                <span>{formatAbsolute(item.pubDate)} • {formatRelative(item.pubDate)}</span>
+              </CardDescription>
+            </div>
+            <BookmarkButton active={isBookmarked} onClick={onBookmark} />
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{stripHtml(item.description)}</p>
+          <div className="mt-4 flex items-center gap-2">
+            <Button asChild variant="outline">
+              <a href={item.link} target="_blank" rel="noopener noreferrer" aria-label={`${L.read}: ${item.title}`}>
+                {L.read}
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
+                    <CopyIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{L.copy}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function BookmarkButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant={active ? "secondary" : "ghost"} size="icon" aria-label={active ? "Bookmarked" : "Bookmark"} onClick={onClick}>
+            {active ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{active ? "Bookmarked" : "Bookmark"}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function EmptyState() {
+  return (
+    <Card className="border-dashed">
+      <CardContent className="py-16 text-center">
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10">
+          <Filter className="h-6 w-6" />
+        </div>
+        <h3 className="text-lg font-semibold">{L.emptyTitle}</h3>
+        <p className="text-muted-foreground mt-1">{L.emptyDesc}</p>
+      </CardContent>
+    </Card>
+  );
+}
