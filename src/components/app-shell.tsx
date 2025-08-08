@@ -70,6 +70,7 @@ const navigation: NavGroup[] = [
         href: '/gpts',
         label: 'GPT Collection',
         icon: BotMessageSquare,
+        isLive: true,
       },
       {
         href: '/professional-liability',

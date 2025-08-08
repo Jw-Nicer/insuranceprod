@@ -15,3 +15,17 @@ export interface UploadedData {
   totalPremium: number;
   totalClaims: number;
 }
+
+export interface Transaction {
+  category: string;
+  supplierName: string;
+  spend: number;
+  addressable: boolean;
+  discoverable: boolean;
+}
+
+export interface Gpt {
+  name: string;
+  description: string;
+  url: string;
+}

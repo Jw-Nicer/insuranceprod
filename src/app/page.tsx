@@ -7,10 +7,10 @@ import InsuranceDashboard from '@/components/insurance-dashboard';
 import { parseCsv } from '@/lib/csv-helpers';
 import { useToast } from "@/hooks/use-toast"
 import { AppShell } from '@/components/app-shell';
-import type { Claim } from '@/types';
+import type { Transaction } from '@/types';
 
 export default function Home() {
-  const [claims, setClaims] = useState<Claim[] | null>(null);
+  const [claims, setClaims] = useState<Transaction[] | null>(null);
   const [csvData, setCsvData] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AnalyzeInsuranceClaimsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +19,7 @@ export default function Home() {
   const handleFileProcess = (fileContent: string) => {
     try {
       setCsvData(fileContent);
-      const records: Claim[] = parseCsv(fileContent);
+      const records: Transaction[] = parseCsv(fileContent);
       setClaims(records);
       setAnalysis(null);
     } catch (err) {
@@ -77,7 +77,7 @@ export default function Home() {
           />
         ) : (
           <InsuranceDashboard
-            claims={claims}
+            claims={claims as any[]}
             analysis={analysis}
             onAnalyze={handleAnalyze}
             isLoadingAnalysis={isLoading}
