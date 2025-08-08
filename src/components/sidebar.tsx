@@ -21,8 +21,11 @@ import {
   ShieldCheck,
   User,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export function AppSidebar() {
+  const pathname = usePathname();
   return (
     <>
       <SidebarHeader>
@@ -40,10 +43,12 @@ export function AppSidebar() {
           <SidebarGroupLabel>ANALYSIS</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton isActive>
-                <LayoutGrid />
-                Dashboard
-              </SidebarMenuButton>
+              <Link href="/" passHref>
+                <SidebarMenuButton isActive={pathname === '/'}>
+                  <LayoutGrid />
+                  Dashboard
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton>
@@ -57,10 +62,12 @@ export function AppSidebar() {
           <SidebarGroupLabel>TOOLS</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton>
-                <FileText />
-                Loss Run
-              </SidebarMenuButton>
+               <Link href="/loss-run" passHref>
+                <SidebarMenuButton isActive={pathname === '/loss-run'}>
+                  <FileText />
+                  Loss Run
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton>
