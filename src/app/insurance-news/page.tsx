@@ -993,5 +993,3 @@ function EmptyState() {
     </Card>
   );
 }
-
-```
