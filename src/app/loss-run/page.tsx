@@ -128,7 +128,7 @@ export default function LossRunPage() {
               </Card>
             </div>
 
-            {premiumHistory && <LossRunDashboard history={premiumHistory} />}
+            <LossRunDashboard history={premiumHistory} />
           </div>
         )}
       </main>
