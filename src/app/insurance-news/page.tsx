@@ -50,6 +50,10 @@ interface NewsItem {
   content: string;
   enclosure: Record<string, unknown>;
   categories: string[];
+  smartCategories?: {
+    lob: string[];
+    theme: string[];
+  }
 }
 
 /************************************
@@ -132,10 +136,62 @@ function formatRelative(date: Date | string) {
   return rtf.format(Math.round(diff), "second");
 }
 
-function uniqueCategories(items: NewsItem[]) {
-  const set = new Set<string>();
-  items.forEach((i) => i.categories?.forEach((c) => set.add(c.trim())));
-  return Array.from(set).sort((a, b) => a.localeCompare(b));
+/************************************
+ * Smart categorization (keyword heuristics)
+ ************************************/
+const LOB_KEYWORDS: Record<string, string[]> = {
+  "Property": ["property", "homeowner", "homeowners"],
+  "Auto": ["auto", "automobile", "motor vehicle", "personal auto", "commercial auto"],
+  "General Liability": ["general liability", "cgl", "liability coverage"],
+  "Cyber": ["cyber", "ransomware", "data breach", "phishing"],
+  "Workers' Comp": ["workers compensation", "workers' compensation", "workers comp", " wc "],
+  "Health/Life": ["life insurance", "life insurer", "health plan", "health insurance", "medicare", "medicaid", "benefit"],
+  "Marine": ["marine", "cargo", "inland marine", "hull"],
+  "Aviation": ["aviation", "aircraft", "drone"],
+  "D&O / E&O / Prof. Liab.": ["d&o", "directors and officers", "e&o", "errors and omissions", "professional liability"],
+  "Reinsurance": ["reinsurance", "retrocession", "cat bond", "insurance-linked securities", "ils"],
+  "Flood": ["flood", "nfip"],
+  "Parametric": ["parametric"],
+};
+
+const THEME_KEYWORDS: Record<string, string[]> = {
+  "Catastrophes & Weather": ["hurricane", "tropical", "wildfire", "earthquake", "storm", "tornado", "hail", "heatwave", "flood", "windstorm", "convective"],
+  "Regulation & Policy": ["naic", "commissioner", "department of insurance", "rulemaking", "regulation", "statute", "bill", "legislation", "law", "compliance"],
+  "Rates & Pricing": ["rate hike", "rate increase", "rate filing", "rates approved", "pricing", "premium up", "premium down", "renewal rate"],
+  "Claims & Litigation": ["claim", "lawsuit", "litigation", "settlement", "verdict", "jury", "class action"],
+  "Technology & AI": ["artificial intelligence", " ai ", "genai", "machine learning", "insurtech", "platform", "cloud", "cybersecurity"],
+  "M&A & Partnerships": ["acquire", "acquisition", "merger", "buy ", "sell ", "spinoff", "spin off", "partnership", "joint venture"],
+  "Financials & Earnings": ["earnings", "quarter", "guidance", "revenue", "net income", "combined ratio", "underwriting profit", "loss ratio", " q1 ", " q2 ", " q3 ", " q4 "],
+  "Distribution & Brokers": ["broker", "agency", "wholesale", "retail agent", "producer", "mga"],
+  "Fraud & Crime": ["fraud", "indicted", "indictment", "arrest", "scheme"],
+  "Product & Underwriting": ["launch", "introduce", "program", "coverage", "capacity", "underwriting appetite"],
+};
+
+function getSmartCategories(item: NewsItem): { lob: string[], theme: string[] } {
+  const text = `${item.title} ${stripHtml(item.description)}`.toLowerCase();
+  const findMatches = (keywords: Record<string, string[]>) => 
+    Object.entries(keywords).reduce((acc, [category, kws]) => {
+      if (kws.some(kw => text.includes(kw))) {
+        acc.push(category);
+      }
+      return acc;
+    }, [] as string[]);
+  return {
+    lob: findMatches(LOB_KEYWORDS),
+    theme: findMatches(THEME_KEYWORDS),
+  }
+}
+
+function uniqueSmartCategories(items: NewsItem[]) {
+  const categories = { lob: new Set<string>(), theme: new Set<string>() };
+  items.forEach(item => {
+    item.smartCategories?.lob.forEach(c => categories.lob.add(c));
+    item.smartCategories?.theme.forEach(c => categories.theme.add(c));
+  });
+  return {
+    lob: Array.from(categories.lob).sort(),
+    theme: Array.from(categories.theme).sort(),
+  };
 }
 
 /************************************
@@ -175,7 +231,13 @@ export default function InsuranceNewsPage() {
       if (!res.ok) throw new Error("Failed to fetch news feed.");
       const data = await res.json();
       if (data.status !== "ok") throw new Error("Failed to parse news feed.");
-      setNews((data.items || []) as NewsItem[]);
+      
+      const processedNews = ((data.items || []) as NewsItem[]).map(item => ({
+        ...item,
+        smartCategories: getSmartCategories(item)
+      }));
+
+      setNews(processedNews);
       setLastUpdated(new Date());
       setPage(1);
     } catch (err: any) {
@@ -191,14 +253,15 @@ export default function InsuranceNewsPage() {
     setIsMounted(true);
   }, [fetchNews]);
 
-  const categories = React.useMemo(() => [L.all, ...uniqueCategories(news)], [news]);
+  const categories = React.useMemo(() => uniqueSmartCategories(news), [news]);
+  const allCategories = [L.all, ...categories.lob, ...categories.theme];
 
   // Filtering + sorting
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = news.filter((n) =>
       (!q || n.title.toLowerCase().includes(q) || stripHtml(n.description).toLowerCase().includes(q)) &&
-      (category === L.all || n.categories?.includes(category))
+      (category === L.all || n.smartCategories?.lob.includes(category) || n.smartCategories?.theme.includes(category))
     );
     switch (sort) {
       case "newest":
@@ -252,7 +315,7 @@ export default function InsuranceNewsPage() {
                     <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>{lastUpdated ? L.updated(lastUpdated) : ""}</TooltipContent>
+                <TooltipContent>{lastUpdated ? `Updated ${formatRelative(lastUpdated)}` : ""}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -263,7 +326,7 @@ export default function InsuranceNewsPage() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary" className="rounded-full px-2.5 py-1">{L.items(filtered.length)}</Badge>
             <Separator orientation="vertical" className="h-4" />
-            {isMounted && lastUpdated && <span className="hidden sm:inline">{L.updated(lastUpdated)}</span>}
+            {isMounted && lastUpdated && <span className="hidden sm:inline">{`Updated ${formatRelative(lastUpdated)}`}</span>}
           </div>
 
           <div className="flex items-center gap-2">
@@ -316,7 +379,7 @@ export default function InsuranceNewsPage() {
         <div className="mt-3">
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex items-center gap-2 pb-2">
-              {categories.map((c) => (
+              {allCategories.map((c) => (
                 <Button key={c} size="sm" variant={category === c ? "secondary" : "outline"} className="rounded-full" onClick={() => setCategory(c)}>
                   {c}
                 </Button>
@@ -423,9 +486,13 @@ function NewsCardGrid({ item, isBookmarked, onBookmark, onCopy }: { item: NewsIt
       <CardContent className="flex-1">
         {item.thumbnail && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.thumbnail} alt="thumbnail" className="mb-3 w-full rounded-lg aspect-video object-cover" />
+          <img src={item.thumbnail} alt="thumbnail" className="mb-3 w-full rounded-lg aspect-video object-cover" data-ai-hint="news article" />
         )}
         <p className="text-sm text-muted-foreground line-clamp-3">{stripHtml(item.description)}</p>
+         <div className="mt-3 flex flex-wrap gap-1">
+            {item.smartCategories?.lob.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
+            {item.smartCategories?.theme.map(c => <Badge key={c} variant="outline">{c}</Badge>)}
+        </div>
       </CardContent>
       <CardFooter className="gap-2">
         <Button asChild variant="outline" className="w-full">
@@ -455,7 +522,7 @@ function NewsCardList({ item, isBookmarked, onBookmark, onCopy }: { item: NewsIt
       <div className="flex gap-4 p-6">
         {item.thumbnail && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.thumbnail} alt="thumbnail" className="w-44 rounded-lg aspect-video object-cover" />
+          <img src={item.thumbnail} alt="thumbnail" className="w-44 rounded-lg aspect-video object-cover" data-ai-hint="news article" />
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
@@ -469,6 +536,10 @@ function NewsCardList({ item, isBookmarked, onBookmark, onCopy }: { item: NewsIt
             <BookmarkButton active={isBookmarked} onClick={onBookmark} />
           </div>
           <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{stripHtml(item.description)}</p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {item.smartCategories?.lob.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
+            {item.smartCategories?.theme.map(c => <Badge key={c} variant="outline">{c}</Badge>)}
+        </div>
           <div className="mt-4 flex items-center gap-2">
             <Button asChild variant="outline">
               <a href={item.link} target="_blank" rel="noopener noreferrer" aria-label={`${L.read}: ${item.title}`}>
@@ -521,5 +592,3 @@ function EmptyState() {
     </Card>
   );
 }
-
-    
