@@ -4,10 +4,9 @@ import { useState } from 'react';
 import { analyzeInsuranceClaims, AnalyzeInsuranceClaimsOutput } from '@/ai/flows/analyze-insurance-claims';
 import FileUploader from '@/components/file-uploader';
 import InsuranceDashboard from '@/components/insurance-dashboard';
-import { AppSidebar } from '@/components/sidebar';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { parseCsv } from '@/lib/csv-helpers';
 import { useToast } from "@/hooks/use-toast"
+import { AppShell } from '@/components/app-shell';
 
 // A generic claim type
 export type Claim = {
@@ -73,27 +72,22 @@ export default function Home() {
   };
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-          {!claims ? (
-            <FileUploader
-              onFileProcess={handleFileProcess}
-              onAnalyze={handleAnalyze}
-              isLoading={isLoading}
-            />
-          ) : (
-            <InsuranceDashboard
-              claims={claims}
-              analysis={analysis}
-              onAnalyze={handleAnalyze}
-              isLoadingAnalysis={isLoading}
-              onReset={reset}
-            />
-          )}
-      </SidebarInset>
-    </SidebarProvider>
+    <AppShell>
+        {!claims ? (
+          <FileUploader
+            onFileProcess={handleFileProcess}
+            onAnalyze={handleAnalyze}
+            isLoading={isLoading}
+          />
+        ) : (
+          <InsuranceDashboard
+            claims={claims}
+            analysis={analysis}
+            onAnalyze={handleAnalyze}
+            isLoadingAnalysis={isLoading}
+            onReset={reset}
+          />
+        )}
+    </AppShell>
   );
 }
