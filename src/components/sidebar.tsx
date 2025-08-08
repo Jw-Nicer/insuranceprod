@@ -107,10 +107,12 @@ export function AppSidebar() {
           <SidebarGroupLabel>INSURANCE NEWS</SidebarGroupLabel>
            <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton>
-                <Newspaper />
-                Latest News
-              </SidebarMenuButton>
+              <Link href="/insurance-news" passHref>
+                <SidebarMenuButton isActive={pathname === '/insurance-news'}>
+                  <Newspaper />
+                  Latest News
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
