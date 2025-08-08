@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useTheme } from "next-themes";
 import { Logo } from "@/components/logo";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 /************************************
  * Types
@@ -87,24 +88,6 @@ export const navigation: NavGroup[] = [
 /************************************
  * Helpers
  ************************************/
-function useLocalStorage<T>(key: string, initialValue: T) {
-  const [value, setValue] = React.useState<T>(() => {
-    if (typeof window === "undefined") return initialValue;
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? (JSON.parse(item) as T) : initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
-  React.useEffect(() => {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch {}
-  }, [key, value]);
-  return [value, setValue] as const;
-}
-
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);

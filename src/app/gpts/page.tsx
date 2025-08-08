@@ -48,12 +48,13 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { AppShell } from "@/components/app-shell";
 import type { Gpt } from "@/types";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 /************************************
  * Labels (i18n-ready)
@@ -80,6 +81,7 @@ const L = {
   badges: { curated: "Curated", external: "External" },
   empty: { title: "No GPTs yet", desc: "Add your first GPT to get started.", cta: "Create GPT" },
   count: (n: number) => `${n} item${n === 1 ? "" : "s"}`,
+  copied: "Link copied!",
 };
 
 /************************************
@@ -156,7 +158,7 @@ const GptCard: React.FC<{
   const copyUrl = async () => {
     try {
       await navigator.clipboard.writeText(gpt.url);
-      toast({ title: "Link copied!", description: "The GPT URL has been copied to your clipboard." });
+      toast({ title: L.copied });
     } catch (err) {
       toast({ variant: "destructive", title: "Copy failed", description: "Could not copy the link." });
     }
@@ -174,12 +176,12 @@ const GptCard: React.FC<{
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(index)}><Pencil className="mr-2" /> {L.actions.edit}</DropdownMenuItem>
-              <DropdownMenuItem onClick={copyUrl}><CopyIcon className="mr-2" /> {L.actions.copyLink}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(index)}><Pencil className="mr-2 h-4 w-4" /> {L.actions.edit}</DropdownMenuItem>
+              <DropdownMenuItem onClick={copyUrl}><CopyIcon className="mr-2 h-4 w-4" /> {L.actions.copyLink}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem className="text-destructive" onClick={() => onDelete(index)}>
-                  <Trash2 className="mr-2" /> {L.actions.delete}
+                  <Trash2 className="mr-2 h-4 w-4" /> {L.actions.delete}
                 </DropdownMenuItem>
               </AlertDialogTrigger>
             </DropdownMenuContent>
@@ -196,7 +198,7 @@ const GptCard: React.FC<{
       <CardFooter>
         <Button asChild variant="outline" className="w-full">
           <a href={gpt.url} target="_blank" rel="noopener noreferrer">
-            {L.actions.open} <ExternalLink className="ml-2" />
+            {L.actions.open} <ExternalLink className="ml-2 h-4 w-4" />
           </a>
         </Button>
       </CardFooter>
@@ -213,7 +215,7 @@ const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
       <h2 className="text-xl font-semibold mb-2">{L.empty.title}</h2>
       <p className="text-muted-foreground mb-4">{L.empty.desc}</p>
       <Button onClick={onAdd}>
-        <PlusCircle className="mr-2" /> {L.empty.cta}
+        <PlusCircle className="mr-2 h-4 w-4" /> {L.empty.cta}
       </Button>
     </div>
 );
@@ -222,7 +224,7 @@ const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
  * Main Page
  ************************************/
 export default function GptsPage() {
-  const [gpts, setGpts] = React.useState<Gpt[]>(initialGpts);
+  const [gpts, setGpts] = useLocalStorage<Gpt[]>("gpts:list", initialGpts);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [activeGpt, setActiveGpt] = React.useState<Gpt>(emptyGpt);
@@ -285,11 +287,11 @@ export default function GptsPage() {
                 <div className="flex items-center gap-2">
                 <Button variant="outline" asChild>
                     <a href="https://erauk-my.sharepoint.com/:x:/r/personal/jnicer_eragroup_com/Documents/Enhance%20Insurance%20GPTs/Insurance%20GPTs%20Development%20Tracker.xlsx?d=wa227041a57f44de6b5803d6a484ce7e6&csf=1&web=1&e=yBiWLE" target="_blank" rel="noopener noreferrer">
-                        <SheetIcon className="mr-2" /> {L.tracker}
+                        <SheetIcon className="mr-2 h-4 w-4" /> {L.tracker}
                     </a>
                 </Button>
                 <Button onClick={openAddDialog}>
-                    <PlusCircle className="mr-2" /> {L.add}
+                    <PlusCircle className="mr-2 h-4 w-4" /> {L.add}
                 </Button>
                 </div>
             </header>
