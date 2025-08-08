@@ -535,6 +535,7 @@ export default function InsuranceNewsPage() {
 
   return (
     <AppShell>
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -711,9 +712,10 @@ export default function InsuranceNewsPage() {
         </div>
       </div>
 
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
       {/* Loading */}
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6" aria-busy>
           {Array.from({ length: 9 }).map((_, i) => (
             <Card key={i}>
               <CardHeader>
@@ -754,7 +756,7 @@ export default function InsuranceNewsPage() {
         <EmptyState />
       ) : (
         <AnimatePresence mode="popLayout">
-          <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+          <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6" : "space-y-4 sm:space-y-6"}>
             {visible.map((item) => (
               <motion.div
                 key={idFor(item)}
@@ -793,6 +795,7 @@ export default function InsuranceNewsPage() {
           </Button>
         </div>
       )}
+      </div>
     </AppShell>
   );
 }
@@ -827,7 +830,7 @@ function NewsCardGrid({
 }) {
   const meta = deriveMeta(item);
   return (
-    <Card className="flex flex-col hover:shadow-lg transition-all">
+    <Card className="flex h-full flex-col hover:shadow-lg transition-all overflow-hidden break-words">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -886,10 +889,10 @@ function NewsCardList({
 }) {
   const meta = deriveMeta(item);
   return (
-    <Card className="hover:shadow-lg transition-all">
-      <div className="flex gap-4 p-6">
+    <Card className="hover:shadow-lg transition-all overflow-hidden break-words">
+      <div className="flex gap-4 p-4 sm:p-6">
         {item.thumbnail && (
-          // eslint-disable-next-line @next/next/no-img-element
+          // eslint-disable--next-line @next/next/no-img-element
           <img src={item.thumbnail} alt="thumbnail" className="w-44 rounded-lg aspect-video object-cover" data-ai-hint="news article"/>
         )}
         <div className="flex-1 min-w-0">
