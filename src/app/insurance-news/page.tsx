@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -385,7 +384,7 @@ export default function InsuranceNewsPage() {
     "news:activeSources",
     RSS_SOURCES.map((s) => s.key)
   );
-    const [isMounted, setIsMounted] = React.useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
 
   const [feedStatus, setFeedStatus] = React.useState<FeedStatus[]>([]);
 
@@ -533,71 +532,79 @@ export default function InsuranceNewsPage() {
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
   };
-
+  
   return (
     <AppShell>
-      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
-      {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{L.title}</h1>
-            <p className="text-muted-foreground mt-1">{L.subtitle}</p>
-          </div>
-
-          <div className="flex gap-2">
-            {/* Sources selector */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="whitespace-nowrap">
-                  {L.sources}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>Active feeds</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {RSS_SOURCES.map((s) => (
-                  <DropdownMenuCheckboxItem
-                    key={s.key}
-                    checked={activeSourceKeys.includes(s.key)}
-                    onCheckedChange={() => toggleActiveSource(s.key)}
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-sm">{s.name}</span>
-                      <span className="text-[11px] text-muted-foreground">{s.region || ""}</span>
-                    </div>
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Refresh with health tooltip */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" onClick={fetchNews} aria-label={L.refresh}>
-                    <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
+      <main className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{L.title}</h1>
+              <p className="text-muted-foreground mt-1">{L.subtitle}</p>
+            </div>
+  
+            <div className="flex gap-2">
+              {/* Sources selector */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="whitespace-nowrap">
+                    {L.sources}
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="space-y-1 p-2">
-                    {lastUpdated && <div className="text-xs font-semibold">{`Last updated: ${formatRelative(lastUpdated)}`}</div>}
-                    {feedStatus.length > 0 && (
-                      <ul className="text-xs space-y-1">
-                        {feedStatus.map((f) => (
-                          <li key={f.key} className={f.ok ? "text-foreground" : "text-destructive"}>
-                            <span className="font-medium">{RSS_SOURCES.find((s) => s.key === f.key)?.name || f.key}:</span> {f.ok ? `${f.count} items` : `error - ${f.error}`}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </TooltipContent>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>Active feeds</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {RSS_SOURCES.map((s) => (
+                    <DropdownMenuCheckboxItem
+                      key={s.key}
+                      checked={activeSourceKeys.includes(s.key)}
+                      onCheckedChange={() => toggleActiveSource(s.key)}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm">{s.name}</span>
+                        <span className="text-[11px] text-muted-foreground">{s.region || ""}</span>
+                      </div>
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+  
+              {/* Refresh with health tooltip */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" onClick={fetchNews} aria-label={L.refresh}>
+                      <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="space-y-1 p-2">
+                      {lastUpdated && (
+                        <div className="text-xs font-semibold">
+                          {`Last updated: ${formatRelative(lastUpdated)}`}
+                        </div>
+                      )}
+                      {feedStatus.length > 0 && (
+                        <ul className="text-xs space-y-1">
+                          {feedStatus.map((f) => (
+                            <li key={f.key} className={f.ok ? "text-foreground" : "text-destructive"}>
+                              <span className="font-medium">
+                                {RSS_SOURCES.find((s) => s.key === f.key)?.name || f.key}:
+                              </span>{" "}
+                              {f.ok ? `${f.count} items` : `error - ${f.error}`}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
               </Tooltip>
             </TooltipProvider>
           </div>
         </div>
-
+  
         {/* Toolbar */}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -605,9 +612,11 @@ export default function InsuranceNewsPage() {
               {L.items(filtered.length)}
             </Badge>
             <Separator orientation="vertical" className="h-4" />
-            {isMounted && lastUpdated && <span className="hidden sm:inline">{`Updated ${formatRelative(lastUpdated)}`}</span>}
+            {isMounted && lastUpdated && (
+              <span className="hidden sm:inline">{`Updated ${formatRelative(lastUpdated)}`}</span>
+            )}
           </div>
-
+  
           <div className="flex items-center gap-2">
             {/* Search */}
             <div className="relative w-full sm:w-72">
@@ -620,7 +629,7 @@ export default function InsuranceNewsPage() {
                 aria-label="Search news"
               />
             </div>
-
+  
             {/* Sort */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -645,23 +654,33 @@ export default function InsuranceNewsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-             {/* View toggle */}
-             {!isMounted ? (
-                <Skeleton className="h-10 w-[72px] hidden sm:block" />
+  
+            {/* View toggle */}
+            {!isMounted ? (
+              <Skeleton className="h-10 w-[72px] hidden sm:block" />
             ) : (
-                <div className="hidden sm:flex rounded-lg border overflow-hidden">
-                    <Button variant={view === "grid" ? "secondary" : "ghost"} size="icon" aria-label="Grid view" onClick={() => setView("grid")}>
-                        <LayoutGrid className="h-4 w-4" />
-                    </Button>
-                    <Button variant={view === "list" ? "secondary" : "ghost"} size="icon" aria-label="List view" onClick={() => setView("list")}>
-                        <ListIcon className="h-4 w-4" />
-                    </Button>
-                </div>
+              <div className="hidden sm:flex rounded-lg border overflow-hidden">
+                <Button
+                  variant={view === "grid" ? "secondary" : "ghost"}
+                  size="icon"
+                  aria-label="Grid view"
+                  onClick={() => setView("grid")}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={view === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  aria-label="List view"
+                  onClick={() => setView("list")}
+                >
+                  <ListIcon className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </div>
         </div>
-
+  
         {/* Source chips */}
         <div className="mt-3">
           <ScrollArea className="w-full whitespace-nowrap">
@@ -686,7 +705,7 @@ export default function InsuranceNewsPage() {
             </div>
           </ScrollArea>
         </div>
-
+  
         {/* Smart Topic chips */}
         <div className="mt-1">
           <ScrollArea className="w-full whitespace-nowrap">
@@ -712,7 +731,7 @@ export default function InsuranceNewsPage() {
           </ScrollArea>
         </div>
       </div>
-
+  
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
       {/* Loading */}
       {loading && (
@@ -735,7 +754,7 @@ export default function InsuranceNewsPage() {
           ))}
         </div>
       )}
-
+  
       {/* Error */}
       {!loading && error && (
         <Card>
@@ -751,7 +770,7 @@ export default function InsuranceNewsPage() {
           </CardFooter>
         </Card>
       )}
-
+  
       {/* Grid/List */}
       {!loading && !error && (filtered.length === 0 ? (
         <EmptyState />
@@ -787,7 +806,7 @@ export default function InsuranceNewsPage() {
           </div>
         </AnimatePresence>
       ))}
-
+  
       {/* Load more */}
       {!loading && !error && hasMore && (
         <div className="flex justify-center mt-8">
@@ -797,170 +816,6 @@ export default function InsuranceNewsPage() {
         </div>
       )}
       </div>
-    </AppShell>
-  );
-}
-
-/************************************
- * Presentational components
- ************************************/
-function TopicBadges({ meta }: { meta: ReturnType<typeof deriveMeta> }) {
-  const chips = [...meta.lobs.slice(0, 1), ...meta.themes.slice(0, 1), ...meta.regions.slice(0, 1)];
-  if (chips.length === 0) return null;
-  return (
-    <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Tags">
-      {chips.map((t) => (
-        <Badge key={t} variant="outline" className="rounded-full text-[10px] px-2 py-0.5">
-          {t}
-        </Badge>
-      ))}
-    </div>
-  );
-}
-
-function NewsCardGrid({
-  item,
-  isBookmarked,
-  onBookmark,
-  onCopy,
-}: {
-  item: EnrichedNews;
-  isBookmarked: boolean;
-  onBookmark: () => void;
-  onCopy: () => void;
-}) {
-  const meta = deriveMeta(item);
-  return (
-    <Card className="flex h-full flex-col hover:shadow-lg transition-all overflow-hidden break-words">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-lg leading-snug line-clamp-2">{item.title}</CardTitle>
-            <CardDescription className="mt-1 inline-flex items-center gap-1">
-              <CalendarDays className="h-3.5 w-3.5" />
-              <span>
-                {formatAbsolute(item.pubDate)} • {formatRelative(item.pubDate)}
-              </span>
-            </CardDescription>
-            <div className="mt-1 text-[11px] text-muted-foreground">{item._sourceName}</div>
-            <TopicBadges meta={meta} />
-          </div>
-          <BookmarkButton active={isBookmarked} onClick={onBookmark} />
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1">
-        {item.thumbnail && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.thumbnail} alt="thumbnail" className="mb-3 w-full rounded-lg aspect-video object-cover" data-ai-hint="news article"/>
-        )}
-        <p className="text-sm text-muted-foreground line-clamp-3">{stripHtml(item.description)}</p>
-      </CardContent>
-      <CardFooter className="gap-2">
-        <Button asChild variant="outline" className="w-full">
-          <a href={item.link} target="_blank" rel="noopener noreferrer" aria-label={`${L.read}: ${item.title}`}>
-            {L.read}
-            <ArrowUpRight className="ml-2 h-4 w-4" />
-          </a>
-        </Button>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
-                <CopyIcon className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{L.copy}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </CardFooter>
-    </Card>
-  );
-}
-
-function NewsCardList({
-  item,
-  isBookmarked,
-  onBookmark,
-  onCopy,
-}: {
-  item: EnrichedNews;
-  isBookmarked: boolean;
-  onBookmark: () => void;
-  onCopy: () => void;
-}) {
-  const meta = deriveMeta(item);
-  return (
-    <Card className="hover:shadow-lg transition-all overflow-hidden break-words">
-      <div className="flex gap-4 p-4 sm:p-6">
-        {item.thumbnail && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.thumbnail} alt="thumbnail" className="w-44 rounded-lg aspect-video object-cover" data-ai-hint="news article"/>
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-lg leading-snug line-clamp-1">{item.title}</CardTitle>
-              <CardDescription className="mt-1 inline-flex items-center gap-1">
-                <CalendarDays className="h-3.5 w-3.5" />
-                <span>
-                  {formatAbsolute(item.pubDate)} • {formatRelative(item.pubDate)}
-                </span>
-              </CardDescription>
-              <div className="mt-1 text-[11px] text-muted-foreground">{item._sourceName}</div>
-              <TopicBadges meta={meta} />
-            </div>
-            <BookmarkButton active={isBookmarked} onClick={onBookmark} />
-          </div>
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{stripHtml(item.description)}</p>
-          <div className="mt-4 flex items-center gap-2">
-            <Button asChild variant="outline">
-              <a href={item.link} target="_blank" rel="noopener noreferrer" aria-label={`${L.read}: ${item.title}`}>
-                {L.read}
-                <ArrowUpRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
-                    <CopyIcon className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{L.copy}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function BookmarkButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant={active ? "secondary" : "ghost"} size="icon" aria-label={active ? "Bookmarked" : "Bookmark"} onClick={onClick}>
-            {active ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{active ? "Bookmarked" : "Bookmark"}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
-
-function EmptyState() {
-  return (
-    <Card className="border-dashed">
-      <CardContent className="py-16 text-center">
-        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10">
-          <Filter className="h-6 w-6" />
-        </div>
-        <h3 className="text-lg font-semibold">{L.emptyTitle}</h3>
-        <p className="text-muted-foreground mt-1">{L.emptyDesc}</p>
-      </CardContent>
-    </Card>
-  );
-}
+    </main>
+  </AppShell>
+);
