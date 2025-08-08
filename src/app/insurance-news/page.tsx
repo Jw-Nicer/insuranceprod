@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -79,7 +79,7 @@ const L = {
   saved: "Saved",
   unsaved: "Removed bookmark",
   items: (n: number) => `${n} item${n === 1 ? "" : "s"}`,
-  updated: (d: Date) => `Updated ${formatAbsolute(d)} at ${d.toLocaleTimeString()}`,
+  updated: (d: Date) => `Updated ${formatAbsolute(d)}`,
 };
 
 /************************************
@@ -459,6 +459,4 @@ export default function InsuranceNewsPage() {
     </AppShell>
   );
 }
-
-
     
