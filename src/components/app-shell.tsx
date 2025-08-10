@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -178,6 +179,38 @@ const NavLink: React.FC<{ item: NavItem; pathname: string; collapsed?: boolean }
  ************************************/
 const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
   const [collapsed, setCollapsed] = useLocalStorage<boolean>("sidebar:collapsed", false);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+        <aside
+            className={cn(
+                "relative hidden sm:flex flex-col border-r bg-card text-card-foreground transition-[width] duration-300 w-64"
+            )}
+            aria-label="Primary"
+        >
+            <div className="p-3 h-14" />
+            <Separator />
+            <div className="flex-1 px-2 py-3 space-y-4">
+               {navigation.map(group => (
+                 <div key={group.title}>
+                    <div className="px-3 h-4 w-20 bg-muted rounded animate-pulse mb-3" />
+                    <div className="space-y-1">
+                        {group.items.map(item => (
+                             <div key={item.href} className="h-9 w-full bg-muted rounded animate-pulse" />
+                        ))}
+                    </div>
+                 </div>
+               ))}
+            </div>
+        </aside>
+    );
+  }
+
 
   return (
     <aside
