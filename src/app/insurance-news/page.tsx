@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -456,15 +457,17 @@ export default function InsuranceNewsPage() {
   }, [activeSourceKeys]);
 
   React.useEffect(() => {
-    fetchNews();
     setIsMounted(true);
+    fetchNews();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   React.useEffect(() => {
     // Refetch when active sources change
-    fetchNews();
-  }, [activeSourceKeys, fetchNews]);
+    if(isMounted) {
+      fetchNews();
+    }
+  }, [activeSourceKeys, fetchNews, isMounted]);
 
 
   const topicChips = React.useMemo(() => {
