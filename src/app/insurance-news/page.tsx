@@ -4,4 +4,7 @@ import InsuranceNewsClient from "./_client";
 export default function InsuranceNewsPage() {
   return (
     <AppShell>
-      <InsuranceNewsClient
+      <InsuranceNewsClient />
+    </AppShell>
+  );
+}

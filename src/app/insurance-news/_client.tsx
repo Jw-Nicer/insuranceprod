@@ -362,7 +362,7 @@ type View = "grid" | "list";
 type FeedStatus = { key: string; ok: boolean; count: number; error?: string };
 
 export default function InsuranceNewsClient() {
-  // TODO: Paste the original page component body here (state, hooks, JSX)
+  // Paste the original page component body here (state, hooks, JSX)
   const { toast } = useToast();
 
   // Local state
