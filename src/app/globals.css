@@ -83,9 +83,50 @@
   }
 }
 
-/* Prevent app-wide horizontal scroll and make media shrink to fit */
-:root, html, body { overflow-x: hidden; }
-img, video, canvas, svg { max-width: 100%; height: auto; }
+/* ──────────────────────────────────────────────────────────────
+   Global responsiveness + overflow safety for news page
+   ────────────────────────────────────────────────────────────── */
 
-/* Utility to break long words/URLs inside cards */
-.break-words { word-break: break-word; overflow-wrap: anywhere; }
+/* 1) Prevent page-wide horizontal scroll; keep width within viewport */
+html, body { max-width: 100vw; overflow-x: clip; }
+@supports not (overflow-x: clip) {
+  html, body { overflow-x: hidden; }
+}
+
+/* 2) Containers must never exceed viewport width */
+#root, #__next, main, [data-testid="app-shell"], .page, .container, .content {
+  max-width: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* 3) Media scales down with parent */
+img, video, canvas, svg, iframe { max-width: 100%; height: auto; display: block; }
+
+/* 4) Long tokens wrap instead of stretching layout */
+.break-any { overflow-wrap: anywhere; word-break: break-word; }
+a, p, h1, h2, h3, h4, h5, h6, span, small, strong, em, code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* 5) Flex/Grid children may shrink when space is tight */
+.min-w-0 { min-width: 0 !important; } /* Tailwind has this utility; this ensures it exists at runtime */
+.shrink-child > * { min-width: 0; }
+
+/* 6) News-specific safety (no-op elsewhere) */
+.news-grid { max-width: 100%; overflow-x: hidden; }
+.news-card, .news-list { min-width: 0; }
+.news-card img, .news-list img { width: 100%; height: auto; object-fit: cover; }
+
+/* 7) Keep chip rows scrollable without causing page scroll */
+.scrollarea, [data-radix-scroll-area-viewport] {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+/* 8) Constrain popovers/menus on narrow screens so they don’t widen the page */
+[role="menu"], [data-radix-popper-content-wrapper] { max-width: 90vw; }
+
+/* 9) Optional helper to force-hide any accidental x-overflow on a section */
+.no-x-scroll { overflow-x: hidden !important; }
