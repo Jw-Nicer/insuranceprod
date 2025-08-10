@@ -9,8 +9,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-// NOTE: We intentionally DO NOT import the shared Button component here.
-// A minimal local button is inlined below to avoid any circular/state issues.
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -46,44 +45,6 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-
-/************************************
- * A super-minimal, self-contained Button
- * (avoids possible issues in shared Button)
- ************************************/
-function cx(...cls: Array<string | false | undefined | null>) {
-  return cls.filter(Boolean).join(" ");
-}
-
-type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "default" | "outline" | "secondary" | "ghost";
-  size?: "default" | "icon";
-};
-
-const Btn = React.forwardRef<HTMLButtonElement, BtnProps>(
-  ({ className, variant = "default", size = "default", ...props }, ref) => {
-    const base = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
-    const variants: Record<string, string> = {
-      default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-      outline:
-        "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-      secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-      ghost: "hover:bg-accent hover:text-accent-foreground",
-    };
-    const sizes: Record<string, string> = {
-      default: "h-9 px-4 py-2",
-      icon: "h-9 w-9",
-    };
-    return (
-      <button
-        ref={ref}
-        className={cx(base, variants[variant], sizes[size], className)}
-        {...props}
-      />
-    );
-  }
-);
-Btn.displayName = "Btn";
 
 /************************************
  * Types
@@ -152,9 +113,24 @@ const RSS_SOURCES: SourceDef[] = [
     url: "https://www.insurancejournal.com/news/national/feed/",
     region: "US",
   },
-  { key: "claimsjournal", name: "Claims Journal (US)", url: "https://www.claimsjournal.com/rss/news", region: "US" },
-  { key: "reinsurancene.ws", name: "Reinsurance News (Global)", url: "https://www.reinsurancene.ws/feed/", region: "Global" },
-  { key: "artemis", name: "Artemis – ILS & Reinsurance", url: "https://www.artemis.bm/news/feed/", region: "Global" },
+  {
+    key: "claimsjournal",
+    name: "Claims Journal (US)",
+    url: "https://www.claimsjournal.com/rss/news",
+    region: "US",
+  },
+  {
+    key: "reinsurancene.ws",
+    name: "Reinsurance News (Global)",
+    url: "https://www.reinsurancene.ws/feed/",
+    region: "Global",
+  },
+  {
+    key: "artemis",
+    name: "Artemis – ILS & Reinsurance",
+    url: "https://www.artemis.bm/news/feed/",
+    region: "Global",
+  },
 ];
 
 /************************************
@@ -377,9 +353,10 @@ const REGION_KEYWORDS: Record<string, string[]> = {
   Global: ["global", "worldwide", "international"],
 };
 
+function lower(s: string) { return s.toLowerCase(); }
 function anyIncludes(text: string, keywords: string[]) {
-  const t = text.toLowerCase();
-  return keywords.some((k) => t.includes(k.toLowerCase()));
+  const t = lower(text);
+  return keywords.some((k) => t.includes(lower(k)));
 }
 function matchFromKeywords(map: Record<string, string[]>, text: string) {
   const hits: string[] = [];
@@ -387,9 +364,7 @@ function matchFromKeywords(map: Record<string, string[]>, text: string) {
   return hits;
 }
 function deriveMeta(item: NewsItem) {
-  const text = `${item.title} ${stripHtml(item.description || "")} ${
-    (item.categories || []).join(" ")
-  }`;
+  const text = `${item.title} ${stripHtml(item.description || "")} ${(item.categories || []).join(" ")}`;
   const lobs = matchFromKeywords(LOB_KEYWORDS, text);
   const themes = matchFromKeywords(THEME_KEYWORDS, text);
   const regions = matchFromKeywords(REGION_KEYWORDS, text);
@@ -420,13 +395,24 @@ function buildSourceIndex(items: EnrichedNews[]) {
  ************************************/
 
 type SortKey = "newest" | "oldest" | "az" | "za";
-
 type View = "grid" | "list";
+
+// —— CRASH FIX #1 ————————————————————————————————————————————————
+// Avoid passing fresh object/array defaults into useLocalStorage on every render.
+// Keep them stable at module scope so the hook doesn't churn and setState repeatedly.
+const DEFAULT_VIEW: View = "grid";
+const DEFAULT_BOOKMARKS: Record<string, boolean> = {};
+const DEFAULT_ACTIVE_SOURCES: string[] = RSS_SOURCES.map((s) => s.key);
+
+// —— CRASH FIX #2 ————————————————————————————————————————————————
+// Make helpers pure and stable outside of the component (no useCallback needed).
+const proxyUrl = (url: string) => `${RSS2JSON}${encodeURIComponent(url)}`;
+const idFor = (item: NewsItem) =>
+  (item.guid || item.link || item.title).replace(/https?:\/\//, "").toLowerCase();
 
 export default function InsuranceNewsClient() {
   const { toast } = useToast();
 
-  // Local state
   const [news, setNews] = React.useState<EnrichedNews[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -437,14 +423,14 @@ export default function InsuranceNewsClient() {
   const [sort, setSort] = React.useState<SortKey>("newest");
   const [selectedTopic, setSelectedTopic] = React.useState<string>(L.all);
   const [selectedSource, setSelectedSource] = React.useState<string>(L.all);
-  const [view, setView] = useLocalStorage<View>("news:view", "grid");
+  const [view, setView] = useLocalStorage<View>("news:view", DEFAULT_VIEW);
   const [bookmarks, setBookmarks] = useLocalStorage<Record<string, boolean>>(
     "news:bookmarks",
-    {}
+    DEFAULT_BOOKMARKS
   );
   const [activeSourceKeys, setActiveSourceKeys] = useLocalStorage<string[]>(
     "news:activeSources",
-    RSS_SOURCES.map((s) => s.key)
+    DEFAULT_ACTIVE_SOURCES
   );
 
   const [mounted, setMounted] = React.useState(false);
@@ -454,19 +440,18 @@ export default function InsuranceNewsClient() {
   const [page, setPage] = React.useState(1);
 
   const PAGE_SIZE = 12;
-  const proxyUrl = (url: string) => `${RSS2JSON}${encodeURIComponent(url)}`;
-  const idFor = React.useCallback(
-    (item: NewsItem) =>
-      (item.guid || item.link || item.title)
-        .replace(/https?:\/\//, "")
-        .toLowerCase(),
-    []
+
+  // —— CRASH FIX #3 ————————————————————————————————————————————————
+  // Stable useEffect dependencies. Do not include functions/filters.
+  // Only refetch when the active source list content changes or when reloading.
+  const activeSourcesKey = React.useMemo(
+    () => activeSourceKeys.join("|"),
+    [activeSourceKeys]
   );
 
-  // Fetch once on mount + when sources or reload changes
   React.useEffect(() => {
-    let cancelled = false;
     const controller = new AbortController();
+    let cancelled = false;
 
     async function load() {
       setLoading(true);
@@ -495,10 +480,7 @@ export default function InsuranceNewsClient() {
         );
 
         const all: EnrichedNews[] = [];
-        for (let i = 0; i < results.length; i++) {
-          const r = results[i];
-          if (r.status === "fulfilled") all.push(...r.value);
-        }
+        for (const r of results) if (r.status === "fulfilled") all.push(...r.value);
 
         // Deduplicate
         const seen = new Set<string>();
@@ -517,7 +499,8 @@ export default function InsuranceNewsClient() {
           setSelectedSource(L.all);
         }
       } catch (err: any) {
-        if (!cancelled) setError(err?.message || "An unknown error occurred.");
+        if (!cancelled && err?.name !== "AbortError")
+          setError(err?.message || "An unknown error occurred.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -528,7 +511,7 @@ export default function InsuranceNewsClient() {
       cancelled = true;
       controller.abort();
     };
-  }, [activeSourceKeys, reload]);
+  }, [activeSourcesKey, reload]);
 
   const topicChips = React.useMemo(() => {
     const idx = buildTopicIndex(news);
@@ -571,10 +554,7 @@ export default function InsuranceNewsClient() {
     return list;
   }, [news, deferredQuery, sort, selectedTopic, selectedSource]);
 
-  const visible = React.useMemo(
-    () => filtered.slice(0, page * PAGE_SIZE),
-    [filtered, page]
-  );
+  const visible = React.useMemo(() => filtered.slice(0, page * 12), [filtered, page]);
   const hasMore = visible.length < filtered.length;
 
   const toggleBookmark = React.useCallback(
@@ -606,11 +586,14 @@ export default function InsuranceNewsClient() {
     [toast]
   );
 
-  const toggleActiveSource = React.useCallback((key: string) => {
-    setActiveSourceKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
-  }, [setActiveSourceKeys]);
+  const toggleActiveSource = React.useCallback(
+    (key: string) => {
+      setActiveSourceKeys((prev) =>
+        prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      );
+    },
+    [setActiveSourceKeys]
+  );
 
   return (
     <>
@@ -625,9 +608,9 @@ export default function InsuranceNewsClient() {
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Btn variant="outline" className="whitespace-nowrap">
+                <Button variant="outline" className="whitespace-nowrap">
                   {L.sources}
-                </Btn>
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuLabel>Active feeds</DropdownMenuLabel>
@@ -652,13 +635,13 @@ export default function InsuranceNewsClient() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Btn
+                  <Button
                     variant="outline"
                     onClick={() => setReload((r) => r + 1)}
                     aria-label={L.refresh}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
-                  </Btn>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="space-y-1 p-2">
@@ -702,9 +685,9 @@ export default function InsuranceNewsClient() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Btn variant="outline" className="whitespace-nowrap">
+                <Button variant="outline" className="whitespace-nowrap">
                   {L.sort}
-                </Btn>
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuLabel>{L.sortBy}</DropdownMenuLabel>
@@ -745,22 +728,22 @@ export default function InsuranceNewsClient() {
             </DropdownMenu>
 
             <div className="hidden sm:flex rounded-lg border overflow-hidden">
-              <Btn
+              <Button
                 variant={view === "grid" ? "secondary" : "ghost"}
                 size="icon"
                 aria-label="Grid view"
                 onClick={() => setView("grid")}
               >
                 <LayoutGrid className="h-4 w-4" />
-              </Btn>
-              <Btn
+              </Button>
+              <Button
                 variant={view === "list" ? "secondary" : "ghost"}
                 size="icon"
                 aria-label="List view"
                 onClick={() => setView("list")}
               >
                 <ListIcon className="h-4 w-4" />
-              </Btn>
+              </Button>
             </div>
           </div>
         </div>
@@ -770,14 +753,12 @@ export default function InsuranceNewsClient() {
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex items-center gap-2 pb-2">
               {sourceChips.map(({ source, count }) => (
-                <Btn
+                <Button
                   key={source}
-                  aria-label={`Filter by source ${source}`}
+                  size="sm"
+                  variant={selectedSource === source ? "secondary" : "outline"}
+                  className="rounded-full"
                   onClick={() => setSelectedSource(source)}
-                  className={cx(
-                    "rounded-full border px-3 py-1 h-auto",
-                    selectedSource === source ? "bg-secondary" : "bg-background"
-                  )}
                 >
                   {source}
                   <Badge
@@ -786,7 +767,7 @@ export default function InsuranceNewsClient() {
                   >
                     {count}
                   </Badge>
-                </Btn>
+                </Button>
               ))}
             </div>
           </ScrollArea>
@@ -797,14 +778,12 @@ export default function InsuranceNewsClient() {
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex items-center gap-2 pb-2">
               {topicChips.map(({ topic, count }) => (
-                <Btn
+                <Button
                   key={topic}
-                  aria-label={`Filter by topic ${topic}`}
+                  size="sm"
+                  variant={selectedTopic === topic ? "secondary" : "outline"}
+                  className="rounded-full"
                   onClick={() => setSelectedTopic(topic)}
-                  className={cx(
-                    "rounded-full border px-3 py-1 h-auto",
-                    selectedTopic === topic ? "bg-secondary" : "bg-background"
-                  )}
                 >
                   {topic}
                   <Badge
@@ -813,7 +792,7 @@ export default function InsuranceNewsClient() {
                   >
                     {count}
                   </Badge>
-                </Btn>
+                </Button>
               ))}
             </div>
           </ScrollArea>
@@ -856,7 +835,7 @@ export default function InsuranceNewsClient() {
             <p className="text-sm text-muted-foreground">{error}</p>
           </CardContent>
           <CardFooter>
-            <Btn onClick={() => setReload((r) => r + 1)}>{L.refresh}</Btn>
+            <Button onClick={() => setReload((r) => r + 1)}>{L.refresh}</Button>
           </CardFooter>
         </Card>
       )}
@@ -908,9 +887,9 @@ export default function InsuranceNewsClient() {
       {/* Load more */}
       {!loading && !error && hasMore && (
         <div className="flex justify-center mt-8">
-          <Btn variant="outline" onClick={() => setPage((p) => p + 1)}>
+          <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
             Load more
-          </Btn>
+          </Button>
         </div>
       )}
     </>
@@ -989,25 +968,23 @@ function NewsCardGrid({
         </p>
       </CardContent>
       <CardFooter className="gap-2">
-        <a
-          href={item.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${L.read}: ${item.title}`}
-          className={cx(
-            "w-full inline-flex items-center justify-center rounded-md border h-9 px-4 py-2 text-sm",
-            "border-input bg-background hover:bg-accent hover:text-accent-foreground"
-          )}
-        >
-          {L.read}
-          <ArrowUpRight className="ml-2 h-4 w-4" />
-        </a>
+        <Button asChild variant="outline" className="w-full">
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${L.read}: ${item.title}`}
+          >
+            {L.read}
+            <ArrowUpRight className="ml-2 h-4 w-4" />
+          </a>
+        </Button>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Btn variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
+              <Button variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
                 <CopyIcon className="h-4 w-4" />
-              </Btn>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>{L.copy}</TooltipContent>
           </Tooltip>
@@ -1066,25 +1043,23 @@ function NewsCardList({
             {stripHtml(item.description)}
           </p>
           <div className="mt-4 flex items-center gap-2">
-            <a
-              href={item.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${L.read}: ${item.title}`}
-              className={cx(
-                "inline-flex items-center justify-center rounded-md border h-9 px-4 py-2 text-sm",
-                "border-input bg-background hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              {L.read}
-              <ArrowUpRight className="ml-2 h-4 w-4" />
-            </a>
+            <Button asChild variant="outline">
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${L.read}: ${item.title}`}
+              >
+                {L.read}
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Btn variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
+                  <Button variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
                     <CopyIcon className="h-4 w-4" />
-                  </Btn>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>{L.copy}</TooltipContent>
               </Tooltip>
@@ -1107,7 +1082,7 @@ function BookmarkButton({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Btn
+          <Button
             variant={active ? "secondary" : "ghost"}
             size="icon"
             aria-label={active ? "Bookmarked" : "Bookmark"}
@@ -1118,7 +1093,7 @@ function BookmarkButton({
             ) : (
               <Bookmark className="h-4 w-4" />
             )}
-          </Btn>
+          </Button>
         </TooltipTrigger>
         <TooltipContent>{active ? "Bookmarked" : "Bookmark"}</TooltipContent>
       </Tooltip>
