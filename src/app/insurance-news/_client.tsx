@@ -67,12 +67,13 @@ const stripHtml = (html: string) => {
   return doc.body.textContent || "";
 };
 function formatAbsolute(date: Date | string) {
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime())) return "";
-  if (typeof window === "undefined") return d.toLocaleDateString('en-CA');
-  try {
-    return new Intl.DateTimeFormat(navigator?.language || "en-US", { year: "numeric", month: "long", day: "numeric" }).format(d);
-  } catch { return d.toLocaleDateString(); }
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "";
+    // Use a non-locale-specific format on the server to prevent mismatches.
+    if (typeof window === "undefined") return d.toLocaleDateString('en-CA');
+    try {
+        return new Intl.DateTimeFormat(navigator?.language || "en-US", { year: "numeric", month: "long", day: "numeric" }).format(d);
+    } catch { return d.toLocaleDateString(); }
 }
 function formatRelative(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
