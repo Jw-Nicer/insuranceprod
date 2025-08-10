@@ -163,10 +163,9 @@ function formatRelative(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime()) || typeof window === "undefined") return "";
   const diff = (d.getTime() - Date.now()) / 1000;
-  const rtf = new Intl.RelativeTimeFormat(
-    navigator?.language || "en-US",
-    { numeric: "auto" }
-  );
+  const rtf = new Intl.RelativeTimeFormat(navigator?.language || "en-US", {
+    numeric: "auto",
+  });
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
     ["year", 31536000],
     ["month", 2592000],
@@ -397,19 +396,22 @@ function buildSourceIndex(items: EnrichedNews[]) {
 type SortKey = "newest" | "oldest" | "az" | "za";
 type View = "grid" | "list";
 
-// Stable defaults for useLocalStorage to avoid re-initialization
-const LS_DEFAULT_VIEW: View = "grid";
-const LS_DEFAULT_BOOKMARKS: Record<string, boolean> = {};
-const LS_DEFAULT_SOURCES: string[] = RSS_SOURCES.map((s) => s.key);
+// —— CRASH FIX #1 ————————————————————————————————————————————————
+// Avoid passing fresh object/array defaults into useLocalStorage on every render.
+// Keep them stable at module scope so the hook doesn't churn and setState repeatedly.
+const DEFAULT_VIEW: View = "grid";
+const DEFAULT_BOOKMARKS: Record<string, boolean> = {};
+const DEFAULT_ACTIVE_SOURCES: string[] = RSS_SOURCES.map((s) => s.key);
 
-// Pure helper outside component so it never changes identity
+// —— CRASH FIX #2 ————————————————————————————————————————————————
+// Make helpers pure and stable outside of the component (no useCallback needed).
+const proxyUrl = (url: string) => `${RSS2JSON}${encodeURIComponent(url)}`;
 const idFor = (item: NewsItem) =>
   (item.guid || item.link || item.title).replace(/https?:\/\//, "").toLowerCase();
 
 export default function InsuranceNewsClient() {
   const { toast } = useToast();
 
-  // Local state
   const [news, setNews] = React.useState<EnrichedNews[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -420,14 +422,14 @@ export default function InsuranceNewsClient() {
   const [sort, setSort] = React.useState<SortKey>("newest");
   const [selectedTopic, setSelectedTopic] = React.useState<string>(L.all);
   const [selectedSource, setSelectedSource] = React.useState<string>(L.all);
-  const [view, setView] = useLocalStorage<View>("news:view", LS_DEFAULT_VIEW);
+  const [view, setView] = useLocalStorage<View>("news:view", DEFAULT_VIEW);
   const [bookmarks, setBookmarks] = useLocalStorage<Record<string, boolean>>(
     "news:bookmarks",
-    LS_DEFAULT_BOOKMARKS
+    DEFAULT_BOOKMARKS
   );
   const [activeSourceKeys, setActiveSourceKeys] = useLocalStorage<string[]>(
     "news:activeSources",
-    LS_DEFAULT_SOURCES
+    DEFAULT_ACTIVE_SOURCES
   );
 
   const [mounted, setMounted] = React.useState(false);
@@ -437,9 +439,15 @@ export default function InsuranceNewsClient() {
   const [page, setPage] = React.useState(1);
 
   const PAGE_SIZE = 12;
-  const proxyUrl = (url: string) => `${RSS2JSON}${encodeURIComponent(url)}`;
 
-  // Fetch once on mount + when sources or reload changes
+  // —— CRASH FIX #3 ————————————————————————————————————————————————
+  // Stable useEffect dependencies. Do not include functions/filters.
+  // Only refetch when the active source list content changes or when reloading.
+  const activeSourcesKey = React.useMemo(
+    () => activeSourceKeys.join("|"),
+    [activeSourceKeys]
+  );
+
   React.useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
@@ -471,10 +479,7 @@ export default function InsuranceNewsClient() {
         );
 
         const all: EnrichedNews[] = [];
-        for (let i = 0; i < results.length; i++) {
-          const r = results[i];
-          if (r.status === "fulfilled") all.push(...r.value);
-        }
+        for (const r of results) if (r.status === "fulfilled") all.push(...r.value);
 
         // Deduplicate
         const seen = new Set<string>();
@@ -505,7 +510,7 @@ export default function InsuranceNewsClient() {
       cancelled = true;
       controller.abort();
     };
-  }, [activeSourceKeys.join("|"), reload]);
+  }, [activeSourcesKey, reload]);
 
   const topicChips = React.useMemo(() => {
     const idx = buildTopicIndex(news);
@@ -548,7 +553,7 @@ export default function InsuranceNewsClient() {
     return list;
   }, [news, deferredQuery, sort, selectedTopic, selectedSource]);
 
-  const visible = React.useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
+  const visible = React.useMemo(() => filtered.slice(0, page * 12), [filtered, page]);
   const hasMore = visible.length < filtered.length;
 
   const toggleBookmark = React.useCallback(
@@ -590,219 +595,217 @@ export default function InsuranceNewsClient() {
   );
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden">
-      {/* Page container keeps content centered and prevents horizontal scroll */}
-      <div className="mx-auto w-full max-w-screen-2xl px-3 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{L.title}</h1>
-              <p className="text-muted-foreground mt-1">{L.subtitle}</p>
-            </div>
+    <>
+      {/* Header */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{L.title}</h1>
+            <p className="text-muted-foreground mt-1">{L.subtitle}</p>
+          </div>
 
-            <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="whitespace-nowrap">
-                    {L.sources}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuLabel>Active feeds</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {RSS_SOURCES.map((s) => (
-                    <DropdownMenuCheckboxItem
-                      key={s.key}
-                      checked={activeSourceKeys.includes(s.key)}
-                      onCheckedChange={() => toggleActiveSource(s.key)}
-                    >
-                      <div className="flex flex-col">
-                        <span className="text-sm">{s.name}</span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {s.region || ""}
-                        </span>
-                      </div>
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      onClick={() => setReload((r) => r + 1)}
-                      aria-label={L.refresh}
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="space-y-1 p-2">
-                      {mounted && lastUpdated && (
-                        <div className="text-xs font-semibold">
-                          Updated {formatRelative(lastUpdated)}
-                        </div>
-                      )}
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="whitespace-nowrap">
+                  {L.sources}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Active feeds</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {RSS_SOURCES.map((s) => (
+                  <DropdownMenuCheckboxItem
+                    key={s.key}
+                    checked={activeSourceKeys.includes(s.key)}
+                    onCheckedChange={() => toggleActiveSource(s.key)}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-sm">{s.name}</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {s.region || ""}
+                      </span>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </div>
-
-          {/* Toolbar */}
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="secondary" className="rounded-full px-2.5 py-1">
-                {L.items(filtered.length)}
-              </Badge>
-              <Separator orientation="vertical" className="h-4" />
-              {mounted && lastUpdated && (
-                <span className="hidden sm:inline">
-                  Updated {formatRelative(lastUpdated)}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={L.search}
-                  className="pl-8"
-                  aria-label="Search news"
-                />
-              </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="whitespace-nowrap">
-                    {L.sort}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>{L.sortBy}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setSort("newest")}>
-                    {L.newest}{" "}
-                    {sort === "newest" && (
-                      <Badge className="ml-auto" variant="secondary">
-                        Active
-                      </Badge>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSort("oldest")}>
-                    {L.oldest}{" "}
-                    {sort === "oldest" && (
-                      <Badge className="ml-auto" variant="secondary">
-                        Active
-                      </Badge>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSort("az")}>
-                    {L.az}{" "}
-                    {sort === "az" && (
-                      <Badge className="ml-auto" variant="secondary">
-                        Active
-                      </Badge>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSort("za")}>
-                    {L.za}{" "}
-                    {sort === "za" && (
-                      <Badge className="ml-auto" variant="secondary">
-                        Active
-                      </Badge>
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <div className="hidden sm:flex rounded-lg border overflow-hidden">
-                <Button
-                  variant={view === "grid" ? "secondary" : "ghost"}
-                  size="icon"
-                  aria-label="Grid view"
-                  onClick={() => setView("grid")}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={view === "list" ? "secondary" : "ghost"}
-                  size="icon"
-                  aria-label="List view"
-                  onClick={() => setView("list")}
-                >
-                  <ListIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Source chips */}
-          <div className="mt-3">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex items-center gap-2 pb-2">
-                {sourceChips.map(({ source, count }) => (
-                  <Button
-                    key={source}
-                    size="sm"
-                    variant={selectedSource === source ? "secondary" : "outline"}
-                    className="rounded-full"
-                    onClick={() => setSelectedSource(source)}
-                  >
-                    {source}
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 rounded-full px-1.5 text-[10px]"
-                    >
-                      {count}
-                    </Badge>
-                  </Button>
+                  </DropdownMenuCheckboxItem>
                 ))}
-              </div>
-            </ScrollArea>
-          </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          {/* Smart Topic chips */}
-          <div className="mt-1">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex items-center gap-2 pb-2">
-                {topicChips.map(({ topic, count }) => (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
-                    key={topic}
-                    size="sm"
-                    variant={selectedTopic === topic ? "secondary" : "outline"}
-                    className="rounded-full"
-                    onClick={() => setSelectedTopic(topic)}
+                    variant="outline"
+                    onClick={() => setReload((r) => r + 1)}
+                    aria-label={L.refresh}
                   >
-                    {topic}
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 rounded-full px-1.5 text-[10px]"
-                    >
-                      {count}
-                    </Badge>
+                    <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
                   </Button>
-                ))}
-              </div>
-            </ScrollArea>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="space-y-1 p-2">
+                    {mounted && lastUpdated && (
+                      <div className="text-xs font-semibold">
+                        Updated {formatRelative(lastUpdated)}
+                      </div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 mt-6"
-            aria-busy
-          >
-            {Array.from({ length: 9 }).map((_, i) => (
-              <Card key={i} className="max-w-full">
+        {/* Toolbar */}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Badge variant="secondary" className="rounded-full px-2.5 py-1">
+              {L.items(filtered.length)}
+            </Badge>
+            <Separator orientation="vertical" className="h-4" />
+            {mounted && lastUpdated && (
+              <span className="hidden sm:inline">
+                Updated {formatRelative(lastUpdated)}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={L.search}
+                className="pl-8"
+                aria-label="Search news"
+              />
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="whitespace-nowrap">
+                  {L.sort}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>{L.sortBy}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSort("newest")}>
+                  {L.newest}{" "}
+                  {sort === "newest" && (
+                    <Badge className="ml-auto" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSort("oldest")}>
+                  {L.oldest}{" "}
+                  {sort === "oldest" && (
+                    <Badge className="ml-auto" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSort("az")}>
+                  {L.az}{" "}
+                  {sort === "az" && (
+                    <Badge className="ml-auto" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSort("za")}>
+                  {L.za}{" "}
+                  {sort === "za" && (
+                    <Badge className="ml-auto" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="hidden sm:flex rounded-lg border overflow-hidden">
+              <Button
+                variant={view === "grid" ? "secondary" : "ghost"}
+                size="icon"
+                aria-label="Grid view"
+                onClick={() => setView("grid")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={view === "list" ? "secondary" : "ghost"}
+                size="icon"
+                aria-label="List view"
+                onClick={() => setView("list")}
+              >
+                <ListIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Source chips */}
+        <div className="mt-3">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex items-center gap-2 pb-2">
+              {sourceChips.map(({ source, count }) => (
+                <Button
+                  key={source}
+                  size="sm"
+                  variant={selectedSource === source ? "secondary" : "outline"}
+                  className="rounded-full"
+                  onClick={() => setSelectedSource(source)}
+                >
+                  {source}
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 rounded-full px-1.5 text-[10px]"
+                  >
+                    {count}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Smart Topic chips */}
+        <div className="mt-1">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex items-center gap-2 pb-2">
+              {topicChips.map(({ topic, count }) => (
+                <Button
+                  key={topic}
+                  size="sm"
+                  variant={selectedTopic === topic ? "secondary" : "outline"}
+                  className="rounded-full"
+                  onClick={() => setSelectedTopic(topic)}
+                >
+                  {topic}
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 rounded-full px-1.5 text-[10px]"
+                  >
+                    {count}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 mt-6"
+          aria-busy
+        >
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Card key={i} className="max-w-full">
                 <CardHeader>
                   <Skeleton className="h-5 w-3/4" />
                   <Skeleton className="mt-2 h-4 w-1/3" />
@@ -816,81 +819,80 @@ export default function InsuranceNewsClient() {
                   <Skeleton className="h-9 w-full" />
                 </CardFooter>
               </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Error */}
+      {!loading && error && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-destructive">{L.errorTitle}</CardTitle>
+            <CardDescription>{L.errorDesc}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => setReload((r) => r + 1)}>{L.refresh}</Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {/* Grid/List */}
+      {!loading && !error && (filtered.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <AnimatePresence mode="popLayout">
+          <div
+            className={`mt-6 ${
+              view === "grid"
+                ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6"
+                : "space-y-4 sm:space-y-6"
+            }`}
+          >
+            {visible.map((item) => (
+              <motion.div
+                key={idFor(item)}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.18 }}
+                className="min-w-0"
+              >
+                {view === "grid" ? (
+                  <NewsCardGrid
+                    item={item}
+                    isBookmarked={!!bookmarks[idFor(item)]}
+                    onBookmark={() => toggleBookmark(idFor(item))}
+                    onCopy={() => copyLink(item.link)}
+                    mounted={mounted}
+                  />
+                ) : (
+                  <NewsCardList
+                    item={item}
+                    isBookmarked={!!bookmarks[idFor(item)]}
+                    onBookmark={() => toggleBookmark(idFor(item))}
+                    onCopy={() => copyLink(item.link)}
+                    mounted={mounted}
+                  />
+                )}
+              </motion.div>
             ))}
           </div>
-        )}
+        </AnimatePresence>
+      ))}
 
-        {/* Error */}
-        {!loading && error && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-destructive">{L.errorTitle}</CardTitle>
-              <CardDescription>{L.errorDesc}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{error}</p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => setReload((r) => r + 1)}>{L.refresh}</Button>
-            </CardFooter>
-          </Card>
-        )}
-
-        {/* Grid/List */}
-        {!loading && !error && (filtered.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <AnimatePresence mode="popLayout">
-            <div
-              className={`mt-6 ${
-                view === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6"
-                  : "space-y-4 sm:space-y-6"
-              }`}
-            >
-              {visible.map((item) => (
-                <motion.div
-                  key={idFor(item)}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.18 }}
-                  className="min-w-0"
-                >
-                  {view === "grid" ? (
-                    <NewsCardGrid
-                      item={item}
-                      isBookmarked={!!bookmarks[idFor(item)]}
-                      onBookmark={() => toggleBookmark(idFor(item))}
-                      onCopy={() => copyLink(item.link)}
-                      mounted={mounted}
-                    />
-                  ) : (
-                    <NewsCardList
-                      item={item}
-                      isBookmarked={!!bookmarks[idFor(item)]}
-                      onBookmark={() => toggleBookmark(idFor(item))}
-                      onCopy={() => copyLink(item.link)}
-                      mounted={mounted}
-                    />
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </AnimatePresence>
-        ))}
-
-        {/* Load more */}
-        {!loading && !error && hasMore && (
-          <div className="flex justify-center mt-8">
-            <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
-              Load more
-            </Button>
-          </div>
-        )}
-      </div>
-    </main>
+      {/* Load more */}
+      {!loading && !error && hasMore && (
+        <div className="flex justify-center mt-8">
+          <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
+            Load more
+          </Button>
+        </div>
+      )}
+    </>
   );
 }
 
