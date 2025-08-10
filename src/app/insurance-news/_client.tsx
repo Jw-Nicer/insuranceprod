@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -362,10 +363,8 @@ type View = "grid" | "list";
 type FeedStatus = { key: string; ok: boolean; count: number; error?: string };
 
 export default function InsuranceNewsClient() {
-  // Paste the original page component body here (state, hooks, JSX)
   const { toast } = useToast();
 
-  // Local state
   const [news, setNews] = React.useState<EnrichedNews[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -434,7 +433,6 @@ export default function InsuranceNewsClient() {
         }
       }
 
-      // Deduplicate by guid/link/title (case-insensitive)
       const seen = new Set<string>();
       const deduped = all.filter((it) => {
         const k = idFor(it);
@@ -462,7 +460,6 @@ export default function InsuranceNewsClient() {
   }, []);
   
   React.useEffect(() => {
-    // Refetch when active sources change
     if(isMounted) {
       fetchNews();
     }
@@ -481,7 +478,6 @@ export default function InsuranceNewsClient() {
     return [{ source: L.all, count: news.length }, ...mapped];
   }, [news]);
 
-  // Filtering + sorting
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = news.filter((n) => {
@@ -814,7 +810,7 @@ export default function InsuranceNewsClient() {
           </div>
         )}
     </>
-  )
+  );
 }
 
 /************************************
