@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -42,7 +41,6 @@ import {
 } from "lucide-react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 
-
 /************************************
  * Types
  ************************************/
@@ -67,7 +65,7 @@ type EnrichedNews = NewsItem & {
 interface SourceDef {
   key: string;
   name: string;
-  url: string; // RSS feed URL
+  url: string;
   region?: string;
   notes?: string;
 }
@@ -77,7 +75,8 @@ interface SourceDef {
  ************************************/
 const L = {
   title: "Insurance News",
-  subtitle: "The latest headlines from the insurance industry, aggregated from multiple trusted sources.",
+  subtitle:
+    "The latest headlines from the insurance industry, aggregated from multiple trusted sources.",
   search: "Search news…",
   sort: "Sort",
   sortBy: "Sort by",
@@ -103,38 +102,14 @@ const L = {
 };
 
 /************************************
- * Config – Multiple RSS Feeds (free, insurance-only)
- *
- * Tip: If you hit rss2json rate limits, proxy these in a Firebase Function
- * and fetch from your own endpoint instead.
+ * Config – Multiple RSS Feeds
  ************************************/
 const RSS2JSON = "https://api.rss2json.com/v1/api.json?rss_url=";
 const RSS_SOURCES: SourceDef[] = [
-  {
-    key: "insurancejournal",
-    name: "Insurance Journal (US)",
-    url: "https://www.insurancejournal.com/news/national/feed/",
-    region: "US",
-  },
-  {
-    key: "claimsjournal",
-    name: "Claims Journal (US)",
-    url: "https://www.claimsjournal.com/rss/news",
-    region: "US",
-  },
-  {
-    key: "reinsurancene.ws",
-    name: "Reinsurance News (Global)",
-    url: "https://www.reinsurancene.ws/feed/",
-    region: "Global",
-  },
-  {
-    key: "artemis",
-    name: "Artemis – ILS & Reinsurance",
-    url: "https://www.artemis.bm/news/feed/",
-    region: "Global",
-  },
-  // Add more later (e.g., Lloyd’s press releases RSS) once you verify a stable feed URL
+  { key: "insurancejournal", name: "Insurance Journal (US)", url: "https://www.insurancejournal.com/news/national/feed/", region: "US" },
+  { key: "claimsjournal", name: "Claims Journal (US)", url: "https://www.claimsjournal.com/rss/news", region: "US" },
+  { key: "reinsurancene.ws", name: "Reinsurance News (Global)", url: "https://www.reinsurancene.ws/feed/", region: "Global" },
+  { key: "artemis", name: "Artemis – ILS & Reinsurance", url: "https://www.artemis.bm/news/feed/", region: "Global" },
 ];
 
 /************************************
@@ -148,26 +123,25 @@ const stripHtml = (html: string) => {
 };
 
 function formatAbsolute(date: Date | string) {
-    const d = typeof date === "string" ? new Date(date) : date;
-    if(isNaN(d.getTime())) return "";
-    if (typeof window === 'undefined') return d.toLocaleDateString();
-    try {
-        return new Intl.DateTimeFormat(navigator?.language || "en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        }).format(d);
-    } catch {
-        return d.toLocaleDateString();
-    }
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "";
+  if (typeof window === "undefined") return d.toLocaleDateString();
+  try {
+    return new Intl.DateTimeFormat(navigator?.language || "en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(d);
+  } catch {
+    return d.toLocaleDateString();
+  }
 }
 
 function formatRelative(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  if(isNaN(d.getTime())) return "";
-  if (typeof window === 'undefined') return '';
-  
-  const diff = (d.getTime() - Date.now()) / 1000; // negative if in past
+  if (isNaN(d.getTime())) return "";
+  if (typeof window === "undefined") return "";
+  const diff = (d.getTime() - Date.now()) / 1000;
   const rtf = new Intl.RelativeTimeFormat(navigator?.language || "en-US", { numeric: "auto" });
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
     ["year", 60 * 60 * 24 * 365],
@@ -185,7 +159,7 @@ function formatRelative(date: Date | string) {
 }
 
 /************************************
- * Smart categorization (keyword heuristics)
+ * Keyword helpers
  ************************************/
 const LOB_KEYWORDS: Record<string, string[]> = {
   Property: ["property", "homeowner", "homeowners"],
@@ -203,90 +177,18 @@ const LOB_KEYWORDS: Record<string, string[]> = {
 };
 
 const THEME_KEYWORDS: Record<string, string[]> = {
-  "Catastrophes & Weather": [
-    "hurricane",
-    "tropical",
-    "wildfire",
-    "earthquake",
-    "storm",
-    "tornado",
-    "hail",
-    "heatwave",
-    "flood",
-    "windstorm",
-    "convective",
-  ],
-  "Regulation & Policy": [
-    "naic",
-    "commissioner",
-    "department of insurance",
-    "rulemaking",
-    "regulation",
-    "statute",
-    "bill",
-    "legislation",
-    "law",
-    "compliance",
-  ],
-  "Rates & Pricing": [
-    "rate hike",
-    "rate increase",
-    "rate filing",
-    "rates approved",
-    "pricing",
-    "premium up",
-    "premium down",
-    "renewal rate",
-  ],
-  "Claims & Litigation": [
-    "claim",
-    "lawsuit",
-    "litigation",
-    "settlement",
-    "verdict",
-    "jury",
-    "class action",
-  ],
-  "Technology & AI": [
-    "artificial intelligence",
-    " ai ",
-    "genai",
-    "machine learning",
-    "insurtech",
-    "platform",
-    "cloud",
-    "cybersecurity",
-  ],
-  "M&A & Partnerships": [
-    "acquire",
-    "acquisition",
-    "merger",
-    "buy ",
-    "sell ",
-    "spinoff",
-    "spin off",
-    "partnership",
-    "joint venture",
-  ],
-  "Financials & Earnings": [
-    "earnings",
-    "quarter",
-    "guidance",
-    "revenue",
-    "net income",
-    "combined ratio",
-    "underwriting profit",
-    "loss ratio",
-    " q1 ",
-    " q2 ",
-    " q3 ",
-    " q4 ",
-  ],
-  "Distribution & Brokers": ["broker", "agency", "wholesale", "retail agent", "producer", "mga"],
-  "Fraud & Crime": ["fraud", "indicted", "indictment", "arrest", "scheme"],
-  "Product & Underwriting": ["launch", "introduce", "program", "coverage", "capacity", "underwriting appetite"],
-  "Reserving & Losses": ["reserve", "loss reserve", "adverse development"],
-  "ESG & Climate": ["climate", "esg", "sustainability", "transition risk", "net-zero", "net zero"],
+  "Catastrophes & Weather": ["hurricane","tropical","wildfire","earthquake","storm","tornado","hail","heatwave","flood","windstorm","convective"],
+  "Regulation & Policy": ["naic","commissioner","department of insurance","rulemaking","regulation","statute","bill","legislation","law","compliance"],
+  "Rates & Pricing": ["rate hike","rate increase","rate filing","rates approved","pricing","premium up","premium down","renewal rate"],
+  "Claims & Litigation": ["claim","lawsuit","litigation","settlement","verdict","jury","class action"],
+  "Technology & AI": ["artificial intelligence"," ai ","genai","machine learning","insurtech","platform","cloud","cybersecurity"],
+  "M&A & Partnerships": ["acquire","acquisition","merger","buy ","sell ","spinoff","spin off","partnership","joint venture"],
+  "Financials & Earnings": ["earnings","quarter","guidance","revenue","net income","combined ratio","underwriting profit","loss ratio"," q1 "," q2 "," q3 "," q4 "],
+  "Distribution & Brokers": ["broker","agency","wholesale","retail agent","producer","mga"],
+  "Fraud & Crime": ["fraud","indicted","indictment","arrest","scheme"],
+  "Product & Underwriting": ["launch","introduce","program","coverage","capacity","underwriting appetite"],
+  "Reserving & Losses": ["reserve","loss reserve","adverse development"],
+  "ESG & Climate": ["climate","esg","sustainability","transition risk","net-zero","net zero"],
 };
 
 const REGION_KEYWORDS: Record<string, string[]> = {
@@ -296,28 +198,13 @@ const REGION_KEYWORDS: Record<string, string[]> = {
   "US - New York": ["new york"],
   "US - National": ["united states", "u.s.", " us "],
   Canada: ["canada", "canadian"],
-  Europe: [
-    "europe",
-    "european union",
-    "eu ",
-    "united kingdom",
-    " uk ",
-    "britain",
-    "england",
-    "france",
-    "germany",
-    "italy",
-    "spain",
-    "netherlands",
-  ],
+  Europe: ["europe","european union","eu ","united kingdom"," uk ","britain","england","france","germany","italy","spain","netherlands"],
   Asia: ["asia", "china", "japan", "india", "singapore", "hong kong", "korea"],
   "Latin America": ["latin america", "mexico", "brazil", "argentina", "chile", "colombia"],
   Global: ["global", "worldwide", "international"],
 };
 
-function lower(s: string) {
-  return s.toLowerCase();
-}
+function lower(s: string) { return s.toLowerCase(); }
 function anyIncludes(text: string, keywords: string[]) {
   const t = lower(text);
   return keywords.some((k) => t.includes(lower(k)));
@@ -344,22 +231,16 @@ function buildTopicIndex(items: EnrichedNews[]) {
     const uniq = new Set(deriveMeta(it).topics);
     for (const t of uniq) counts.set(t, (counts.get(t) || 0) + 1);
   }
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([topic, count]) => ({ topic, count }));
+  return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map(([topic, count]) => ({ topic, count }));
 }
 function buildSourceIndex(items: EnrichedNews[]) {
   const counts = new Map<string, number>();
   for (const it of items) counts.set(it._sourceName, (counts.get(it._sourceName) || 0) + 1);
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([source, count]) => ({ source, count }));
+  return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map(([source, count]) => ({ source, count }));
 }
 
 type SortKey = "newest" | "oldest" | "az" | "za";
-
 type View = "grid" | "list";
-
 type FeedStatus = { key: string; ok: boolean; count: number; error?: string };
 
 export default function InsuranceNewsClient() {
@@ -382,17 +263,13 @@ export default function InsuranceNewsClient() {
   );
   const [isMounted, setIsMounted] = React.useState(false);
 
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  React.useEffect(() => { setIsMounted(true); }, []);
 
   const [feedStatus, setFeedStatus] = React.useState<FeedStatus[]>([]);
-
   const [page, setPage] = React.useState(1);
   const PAGE_SIZE = 12;
 
   const proxyUrl = (url: string) => `${RSS2JSON}${encodeURIComponent(url)}`;
-
   const idFor = (item: NewsItem) =>
     (item.guid || item.link || item.title).replace(/https?:\/\//, "").toLowerCase();
 
@@ -407,7 +284,7 @@ export default function InsuranceNewsClient() {
     try {
       const results = await Promise.allSettled(
         active.map(async (src) => {
-          const res = await fetch(proxyUrl(src.url), { next: { revalidate: 21600 } }); // 6h
+          const res = await fetch(proxyUrl(src.url), { next: { revalidate: 21600 } });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
           if (data.status !== "ok") throw new Error("Bad feed response");
@@ -424,11 +301,16 @@ export default function InsuranceNewsClient() {
       const all: EnrichedNews[] = [];
       for (const [index, r] of results.entries()) {
         if (r.status === "fulfilled") {
-            all.push(...r.value);
+          all.push(...r.value);
         } else {
           const src = active[index];
-          if(src) {
-            status.push({ key: src.key, ok: false, count: 0, error: (r as any).reason?.message || "Fetch failed" });
+          if (src) {
+            status.push({
+              key: src.key,
+              ok: false,
+              count: 0,
+              error: (r as any).reason?.message || "Fetch failed",
+            });
           }
         }
       }
@@ -455,11 +337,10 @@ export default function InsuranceNewsClient() {
   }, [activeSourceKeys]);
 
   React.useEffect(() => {
-    if(isMounted) {
+    if (isMounted) {
       fetchNews();
     }
   }, [isMounted, fetchNews]);
-
 
   const topicChips = React.useMemo(() => {
     const idx = buildTopicIndex(news);
@@ -507,7 +388,7 @@ export default function InsuranceNewsClient() {
 
   const toggleBookmark = (id: string) => {
     const uniqueId = id.replace(/https?:\/\//, "").toLowerCase();
-    setBookmarks(prev => ({ ...prev, [uniqueId]: !prev[uniqueId] }));
+    setBookmarks((prev) => ({ ...prev, [uniqueId]: !prev[uniqueId] }));
     toast({ title: bookmarks[uniqueId] ? L.unsaved : L.saved });
   };
 
@@ -516,7 +397,7 @@ export default function InsuranceNewsClient() {
       await navigator.clipboard.writeText(url);
       toast({ title: "Copied", description: "Link copied to clipboard." });
     } catch {
-      toast({ title: "Copy failed", description: "Unable to copy link.", variant: "destructive"});
+      toast({ title: "Copy failed", description: "Unable to copy link.", variant: "destructive" });
     }
   };
 
@@ -528,7 +409,6 @@ export default function InsuranceNewsClient() {
 
   return (
     <>
-      {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -537,7 +417,6 @@ export default function InsuranceNewsClient() {
           </div>
 
           <div className="flex gap-2">
-            {/* Sources selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="whitespace-nowrap">
@@ -562,7 +441,6 @@ export default function InsuranceNewsClient() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Refresh with health tooltip */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -596,7 +474,6 @@ export default function InsuranceNewsClient() {
           </div>
         </div>
 
-        {/* Toolbar */}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary" className="rounded-full px-2.5 py-1">
@@ -609,7 +486,6 @@ export default function InsuranceNewsClient() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Search */}
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -621,7 +497,6 @@ export default function InsuranceNewsClient() {
               />
             </div>
 
-            {/* Sort */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="whitespace-nowrap">
@@ -646,7 +521,6 @@ export default function InsuranceNewsClient() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* View toggle */}
             {!isMounted ? (
               <Skeleton className="h-10 w-[72px] hidden sm:block" />
             ) : (
@@ -672,7 +546,6 @@ export default function InsuranceNewsClient() {
           </div>
         </div>
 
-        {/* Source chips */}
         <div className="mt-3">
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex items-center gap-2 pb-2">
@@ -697,7 +570,6 @@ export default function InsuranceNewsClient() {
           </ScrollArea>
         </div>
 
-        {/* Smart Topic chips */}
         <div className="mt-1">
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex items-center gap-2 pb-2">
@@ -721,89 +593,92 @@ export default function InsuranceNewsClient() {
             </div>
           </ScrollArea>
         </div>
+      </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 mt-6" aria-busy>
-            {Array.from({ length: 9 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="mt-2 h-4 w-1/3" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-36 w-full rounded-lg" />
-                  <Skeleton className="mt-3 h-4 w-full" />
-                  <Skeleton className="mt-2 h-4 w-5/6" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-9 w-full" />
-                </CardFooter>
-              </Card>
+      {loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 mt-6" aria-busy>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="mt-2 h-4 w-1/3" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-36 w-full rounded-lg" />
+                <Skeleton className="mt-3 h-4 w-full" />
+                <Skeleton className="mt-2 h-4 w-5/6" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-9 w-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!loading && error && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-destructive">{L.errorTitle}</CardTitle>
+            <CardDescription>{L.errorDesc}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={fetchNews}>{L.refresh}</Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {!loading && !error && (filtered.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <AnimatePresence mode="popLayout">
+          <div
+            className={`mt-6 ${
+              view === "grid"
+                ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6"
+                : "space-y-4 sm:space-y-6"
+            }`}
+          >
+            {visible.map((item) => (
+              <motion.div
+                key={idFor(item)}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.18 }}
+              >
+                {view === "grid" ? (
+                  <NewsCardGrid
+                    item={item}
+                    isBookmarked={!!bookmarks[idFor(item)]}
+                    onBookmark={() => toggleBookmark(idFor(item))}
+                    onCopy={() => copyLink(item.link)}
+                  />
+                ) : (
+                  <NewsCardList
+                    item={item}
+                    isBookmarked={!!bookmarks[idFor(item)]}
+                    onBookmark={() => toggleBookmark(idFor(item))}
+                    onCopy={() => copyLink(item.link)}
+                  />
+                )}
+              </motion.div>
             ))}
           </div>
-        )}
-    
-        {/* Error */}
-        {!loading && error && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-destructive">{L.errorTitle}</CardTitle>
-              <CardDescription>{L.errorDesc}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{error}</p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={fetchNews}>{L.refresh}</Button>
-            </CardFooter>
-          </Card>
-        )}
-    
-        {/* Grid/List */}
-        {!loading && !error && (filtered.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <AnimatePresence mode="popLayout">
-            <div className={`mt-6 ${view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6" : "space-y-4 sm:space-y-6"}`}>
-              {visible.map((item) => (
-                <motion.div
-                  key={idFor(item)}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  {view === "grid" ? (
-                    <NewsCardGrid
-                      item={item}
-                      isBookmarked={!!bookmarks[idFor(item)]}
-                      onBookmark={() => toggleBookmark(idFor(item))}
-                      onCopy={() => copyLink(item.link)}
-                    />
-                  ) : (
-                    <NewsCardList
-                      item={item}
-                      isBookmarked={!!bookmarks[idFor(item)]}
-                      onBookmark={() => toggleBookmark(idFor(item))}
-                      onCopy={() => copyLink(item.link)}
-                    />
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </AnimatePresence>
-        ))}
-    
-        {/* Load more */}
-        {!loading && !error && hasMore && (
-          <div className="flex justify-center mt-8">
-            <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
-              Load more
-            </Button>
-          </div>
-        )}
+        </AnimatePresence>
+      ))}
+
+      {!loading && !error && hasMore && (
+        <div className="flex justify-center mt-8">
+          <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
+            Load more
+          </Button>
+        </div>
+      )}
     </>
   );
 }
@@ -958,7 +833,12 @@ function BookmarkButton({ active, onClick }: { active: boolean; onClick: () => v
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant={active ? "secondary" : "ghost"} size="icon" aria-label={active ? "Bookmarked" : "Bookmark"} onClick={onClick}>
+          <Button
+            variant={active ? "secondary" : "ghost"}
+            size="icon"
+            aria-label={active ? "Bookmarked" : "Bookmark"}
+            onClick={onClick}
+          >
             {active ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
           </Button>
         </TooltipTrigger>
