@@ -536,7 +536,7 @@ export default function InsuranceNewsClient() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
+    <>
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -813,7 +813,7 @@ export default function InsuranceNewsClient() {
             </Button>
           </div>
         )}
-      </main>
+    </>
   )
 }
 
