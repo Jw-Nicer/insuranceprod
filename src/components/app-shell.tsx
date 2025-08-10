@@ -461,7 +461,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Topbar onOpenCommand={() => setOpenCommand(true)} />
 
         {/* Page container */}
-        <main className="flex-1">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
 
