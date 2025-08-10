@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -562,7 +561,7 @@ export default function InsuranceNewsClient() {
                 >
                   {source}
                   <Badge
-                    variant={selectedSource === source ? "secondary" : "outline"}
+                    variant="secondary"
                     className="ml-2 rounded-full px-1.5 text-[10px]"
                   >
                     {count}
@@ -586,7 +585,7 @@ export default function InsuranceNewsClient() {
                 >
                   {topic}
                   <Badge
-                    variant={selectedTopic === topic ? "secondary" : "outline"}
+                    variant="secondary"
                     className="ml-2 rounded-full px-1.5 text-[10px]"
                   >
                     {count}
@@ -870,5 +869,3 @@ function EmptyState() {
     </Card>
   );
 }
-
-    
