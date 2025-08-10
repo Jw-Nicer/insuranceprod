@@ -82,3 +82,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Prevent app-wide horizontal scroll and make media shrink to fit */
+:root, html, body { overflow-x: hidden; }
+img, video, canvas, svg { max-width: 100%; height: auto; }
+
+/* Utility to break long words/URLs inside cards */
+.break-words { word-break: break-word; overflow-wrap: anywhere; }

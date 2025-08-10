@@ -596,16 +596,14 @@ export default function InsuranceNewsClient() {
   );
 
   return (
-    <main className="relative isolate min-h-screen w-full overflow-x-hidden">
-      <style jsx global>{`html,body{max-width:100%;overflow-x:hidden}*,*::before,*::after{box-sizing:border-box}`}</style>
-      {/* Page container keeps content centered and prevents horizontal scroll */}
-      <div className="mx-auto w-full max-w-full px-3 sm:px-6 lg:px-8">
+    <div className="max-w-full overflow-x-hidden">
+      <div className="mx-auto w-full px-3 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{L.title}</h1>
-              <p className="text-muted-foreground mt-1">{L.subtitle}</p>
+            <div className="min-w-0">
+              <h1 className="text-3xl font-bold tracking-tight break-words">{L.title}</h1>
+              <p className="text-muted-foreground mt-1 break-words">{L.subtitle}</p>
             </div>
 
             <div className="flex gap-2">
@@ -615,7 +613,7 @@ export default function InsuranceNewsClient() {
                     {L.sources}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuContent align="end" className="w-64 max-w-[90vw]">
                   <DropdownMenuLabel>Active feeds</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {RSS_SOURCES.map((s) => (
@@ -692,7 +690,7 @@ export default function InsuranceNewsClient() {
                     {L.sort}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-48 max-w-[90vw]">
                   <DropdownMenuLabel>{L.sortBy}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setSort("newest")}>
@@ -753,7 +751,7 @@ export default function InsuranceNewsClient() {
 
           {/* Source chips */}
           <div className="mt-3">
-            <ScrollArea className="w-full max-w-full whitespace-nowrap">
+            <ScrollArea className="w-full whitespace-nowrap">
               <div className="min-w-0 flex items-center gap-2 pb-2">
                 {sourceChips.map(({ source, count }) => (
                   <Button
@@ -778,7 +776,7 @@ export default function InsuranceNewsClient() {
 
           {/* Smart Topic chips */}
           <div className="mt-1">
-            <ScrollArea className="w-full max-w-full whitespace-nowrap">
+            <ScrollArea className="w-full whitespace-nowrap">
               <div className="min-w-0 flex items-center gap-2 pb-2">
                 {topicChips.map(({ topic, count }) => (
                   <Button
@@ -809,7 +807,7 @@ export default function InsuranceNewsClient() {
             aria-busy
           >
             {Array.from({ length: 9 }).map((_, i) => (
-              <Card key={i} className="max-w-full">
+              <Card key={i} className="min-w-0">
                 <CardHeader>
                   <Skeleton className="h-5 w-3/4" />
                   <Skeleton className="mt-2 h-4 w-1/3" />
@@ -849,11 +847,7 @@ export default function InsuranceNewsClient() {
         ) : (
           <AnimatePresence mode="popLayout">
             <div
-              className={`mt-6 ${
-                view === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6"
-                  : "space-y-4 sm:space-y-6"
-              }`}
+              className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
             >
               {visible.map((item) => (
                 <motion.div
@@ -897,7 +891,7 @@ export default function InsuranceNewsClient() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -937,7 +931,7 @@ function NewsCardGrid({
 }) {
   const meta = deriveMeta(item);
   return (
-    <Card className="flex h-full flex-col hover:shadow-lg transition-all overflow-hidden break-words max-w-full">
+    <Card className="flex h-full flex-col hover:shadow-lg transition-all overflow-hidden break-words min-w-0">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -965,7 +959,7 @@ function NewsCardGrid({
             src={item.thumbnail}
             alt={item.title}
             data-ai-hint="news article"
-            className="mb-3 w-full max-w-full rounded-lg aspect-video object-cover"
+            className="w-full aspect-video object-cover rounded-lg"
           />
         )}
         <p className="text-sm text-muted-foreground line-clamp-3 break-words">
@@ -1014,7 +1008,7 @@ function NewsCardList({
 }) {
   const meta = deriveMeta(item);
   return (
-    <Card className="hover:shadow-lg transition-all overflow-hidden break-words max-w-full">
+    <Card className="hover:shadow-lg transition-all overflow-hidden break-words min-w-0">
       <div className="flex gap-4 p-4 sm:p-6">
         {item.thumbnail && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -1022,7 +1016,7 @@ function NewsCardList({
             src={item.thumbnail}
             alt={item.title}
             data-ai-hint="news article"
-            className="w-36 sm:w-44 rounded-lg aspect-video object-cover"
+            className="w-full aspect-video object-cover rounded-lg sm:w-36"
           />
         )}
         <div className="flex-1 min-w-0">
