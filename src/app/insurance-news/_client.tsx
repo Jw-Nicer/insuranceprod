@@ -467,7 +467,7 @@ export default function InsuranceNewsClient() {
             return items;
           })
         );
-
+        
         if (ac.signal.aborted) return;
         
         const all: EnrichedNews[] = [];
