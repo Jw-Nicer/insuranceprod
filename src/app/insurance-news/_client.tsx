@@ -597,7 +597,6 @@ export default function InsuranceNewsClient() {
 
   return (
     <div className="max-w-full overflow-x-hidden">
-      <div className="mx-auto w-full px-3 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -807,7 +806,7 @@ export default function InsuranceNewsClient() {
             aria-busy
           >
             {Array.from({ length: 9 }).map((_, i) => (
-              <Card key={i} className="min-w-0">
+              <Card key={i} className="max-w-full">
                 <CardHeader>
                   <Skeleton className="h-5 w-3/4" />
                   <Skeleton className="mt-2 h-4 w-1/3" />
@@ -847,7 +846,11 @@ export default function InsuranceNewsClient() {
         ) : (
           <AnimatePresence mode="popLayout">
             <div
-              className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+              className={`mt-6 ${
+                view === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+                  : "space-y-4 sm:space-y-6"
+              }`}
             >
               {visible.map((item) => (
                 <motion.div
@@ -890,7 +893,6 @@ export default function InsuranceNewsClient() {
             </Button>
           </div>
         )}
-      </div>
     </div>
   );
 }
@@ -931,7 +933,7 @@ function NewsCardGrid({
 }) {
   const meta = deriveMeta(item);
   return (
-    <Card className="flex h-full flex-col hover:shadow-lg transition-all overflow-hidden break-words min-w-0">
+    <Card className="flex h-full flex-col hover:shadow-lg transition-all overflow-hidden break-words max-w-full">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -1008,7 +1010,7 @@ function NewsCardList({
 }) {
   const meta = deriveMeta(item);
   return (
-    <Card className="hover:shadow-lg transition-all overflow-hidden break-words min-w-0">
+    <Card className="hover:shadow-lg transition-all overflow-hidden break-words max-w-full">
       <div className="flex gap-4 p-4 sm:p-6">
         {item.thumbnail && (
           // eslint-disable-next-line @next/next/no-img-element
