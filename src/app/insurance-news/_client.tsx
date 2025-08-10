@@ -511,8 +511,8 @@ export default function InsuranceNewsClient() {
   const hasMore = visible.length < filtered.length;
 
   const toggleBookmark = (id: string) => {
-    const uniqueId = idFor({guid: id} as NewsItem)
-    setBookmarks((prev) => ({ ...prev, [uniqueId]: !prev[uniqueId] }));
+    const uniqueId = id.replace(/https?:\/\//, "").toLowerCase();
+    setBookmarks(prev => ({ ...prev, [uniqueId]: !prev[uniqueId] }));
     toast({ title: bookmarks[uniqueId] ? L.unsaved : L.saved });
   };
 
