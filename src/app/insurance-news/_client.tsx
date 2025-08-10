@@ -528,7 +528,7 @@ export default function InsuranceNewsClient() {
       cancelled = true;
       controller.abort();
     };
-  }, [activeSourceKeys, reload, idFor]);
+  }, [activeSourceKeys, reload]);
 
   const topicChips = React.useMemo(() => {
     const idx = buildTopicIndex(news);
