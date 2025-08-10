@@ -386,6 +386,10 @@ export default function InsuranceNewsPage() {
   );
   const [isMounted, setIsMounted] = React.useState(false);
 
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [feedStatus, setFeedStatus] = React.useState<FeedStatus[]>([]);
 
   const [page, setPage] = React.useState(1);
@@ -456,7 +460,6 @@ export default function InsuranceNewsPage() {
   }, [activeSourceKeys]);
 
   React.useEffect(() => {
-    setIsMounted(true);
     fetchNews();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -773,9 +776,7 @@ export default function InsuranceNewsPage() {
     
         {/* Grid/List */}
         {!loading && !error && (filtered.length === 0 ? (
-          <div className="mt-6">
-            <EmptyState />
-          </div>
+          <EmptyState />
         ) : (
           <AnimatePresence mode="popLayout">
             <div className={`mt-6 ${view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6" : "space-y-4 sm:space-y-6"}`}>
@@ -995,3 +996,4 @@ function EmptyState() {
     </Card>
   );
 }
+```
