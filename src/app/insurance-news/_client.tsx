@@ -9,7 +9,8 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Button as UIButton } from "@/components/ui/button"; // alias to avoid any local name collisions
+// NOTE: We intentionally DO NOT import the shared Button component here.
+// A minimal local button is inlined below to avoid any circular/state issues.
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -22,7 +23,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +46,44 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+
+/************************************
+ * A super-minimal, self-contained Button
+ * (avoids possible issues in shared Button)
+ ************************************/
+function cx(...cls: Array<string | false | undefined | null>) {
+  return cls.filter(Boolean).join(" ");
+}
+
+type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "default" | "outline" | "secondary" | "ghost";
+  size?: "default" | "icon";
+};
+
+const Btn = React.forwardRef<HTMLButtonElement, BtnProps>(
+  ({ className, variant = "default", size = "default", ...props }, ref) => {
+    const base = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
+    const variants: Record<string, string> = {
+      default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+      outline:
+        "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+      secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+      ghost: "hover:bg-accent hover:text-accent-foreground",
+    };
+    const sizes: Record<string, string> = {
+      default: "h-9 px-4 py-2",
+      icon: "h-9 w-9",
+    };
+    return (
+      <button
+        ref={ref}
+        className={cx(base, variants[variant], sizes[size], className)}
+        {...props}
+      />
+    );
+  }
+);
+Btn.displayName = "Btn";
 
 /************************************
  * Types
@@ -108,34 +152,17 @@ const RSS_SOURCES: SourceDef[] = [
     url: "https://www.insurancejournal.com/news/national/feed/",
     region: "US",
   },
-  {
-    key: "claimsjournal",
-    name: "Claims Journal (US)",
-    url: "https://www.claimsjournal.com/rss/news",
-    region: "US",
-  },
-  {
-    key: "reinsurancene.ws",
-    name: "Reinsurance News (Global)",
-    url: "https://www.reinsurancene.ws/feed/",
-    region: "Global",
-  },
-  {
-    key: "artemis",
-    name: "Artemis – ILS & Reinsurance",
-    url: "https://www.artemis.bm/news/feed/",
-    region: "Global",
-  },
+  { key: "claimsjournal", name: "Claims Journal (US)", url: "https://www.claimsjournal.com/rss/news", region: "US" },
+  { key: "reinsurancene.ws", name: "Reinsurance News (Global)", url: "https://www.reinsurancene.ws/feed/", region: "Global" },
+  { key: "artemis", name: "Artemis – ILS & Reinsurance", url: "https://www.artemis.bm/news/feed/", region: "Global" },
 ];
 
 /************************************
  * Utils
  ************************************/
-const isSSR = typeof window === "undefined";
-
 const stripHtml = (html: string) => {
   if (!html) return "";
-  if (isSSR) return html.replace(/<[^>]*>/g, "");
+  if (typeof window === "undefined") return html.replace(/<[^>]*>/g, "");
   const doc = new DOMParser().parseFromString(html, "text/html");
   return doc.body.textContent || "";
 };
@@ -144,7 +171,7 @@ function formatAbsolute(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "";
   // Deterministic on server to avoid hydration mismatch.
-  if (isSSR) return d.toLocaleDateString("en-CA");
+  if (typeof window === "undefined") return d.toLocaleDateString("en-CA");
   try {
     return new Intl.DateTimeFormat(navigator?.language || "en-US", {
       year: "numeric",
@@ -158,11 +185,12 @@ function formatAbsolute(date: Date | string) {
 
 function formatRelative(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime()) || isSSR) return "";
+  if (isNaN(d.getTime()) || typeof window === "undefined") return "";
   const diff = (d.getTime() - Date.now()) / 1000;
-  const rtf = new Intl.RelativeTimeFormat(navigator?.language || "en-US", {
-    numeric: "auto",
-  });
+  const rtf = new Intl.RelativeTimeFormat(
+    navigator?.language || "en-US",
+    { numeric: "auto" }
+  );
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
     ["year", 31536000],
     ["month", 2592000],
@@ -349,24 +377,19 @@ const REGION_KEYWORDS: Record<string, string[]> = {
   Global: ["global", "worldwide", "international"],
 };
 
-function lower(s: string) {
-  return s.toLowerCase();
-}
 function anyIncludes(text: string, keywords: string[]) {
-  const t = lower(text);
-  return keywords.some((k) => t.includes(lower(k)));
+  const t = text.toLowerCase();
+  return keywords.some((k) => t.includes(k.toLowerCase()));
 }
 function matchFromKeywords(map: Record<string, string[]>, text: string) {
   const hits: string[] = [];
-  for (const [label, words] of Object.entries(map)) {
-    if (anyIncludes(text, words)) hits.push(label);
-  }
+  for (const [label, words] of Object.entries(map)) if (anyIncludes(text, words)) hits.push(label);
   return hits;
 }
 function deriveMeta(item: NewsItem) {
-  const text = `${item.title} ${stripHtml(item.description || "")} ${(
-    item.categories || []
-  ).join(" ")}`;
+  const text = `${item.title} ${stripHtml(item.description || "")} ${
+    (item.categories || []).join(" ")
+  }`;
   const lobs = matchFromKeywords(LOB_KEYWORDS, text);
   const themes = matchFromKeywords(THEME_KEYWORDS, text);
   const regions = matchFromKeywords(REGION_KEYWORDS, text);
@@ -434,13 +457,16 @@ export default function InsuranceNewsClient() {
   const proxyUrl = (url: string) => `${RSS2JSON}${encodeURIComponent(url)}`;
   const idFor = React.useCallback(
     (item: NewsItem) =>
-      (item.guid || item.link || item.title).replace(/https?:\/\//, "").toLowerCase(),
+      (item.guid || item.link || item.title)
+        .replace(/https?:\/\//, "")
+        .toLowerCase(),
     []
   );
 
   // Fetch once on mount + when sources or reload changes
   React.useEffect(() => {
-    const ac = new AbortController();
+    let cancelled = false;
+    const controller = new AbortController();
 
     async function load() {
       setLoading(true);
@@ -453,8 +479,8 @@ export default function InsuranceNewsClient() {
         const results = await Promise.allSettled(
           active.map(async (src) => {
             const res = await fetch(proxyUrl(src.url), {
-              signal: ac.signal,
               next: { revalidate: 21600 },
+              signal: controller.signal,
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
@@ -467,9 +493,7 @@ export default function InsuranceNewsClient() {
             return items;
           })
         );
-        
-        if (ac.signal.aborted) return;
-        
+
         const all: EnrichedNews[] = [];
         for (let i = 0; i < results.length; i++) {
           const r = results[i];
@@ -484,27 +508,25 @@ export default function InsuranceNewsClient() {
           seen.add(k);
           return true;
         });
-        
-        setNews(deduped);
-        setLastUpdated(new Date(tsStart));
-        setPage(1);
-        setSelectedTopic(L.all);
-        setSelectedSource(L.all);
 
+        if (!cancelled) {
+          setNews(deduped);
+          setLastUpdated(new Date(tsStart));
+          setPage(1);
+          setSelectedTopic(L.all);
+          setSelectedSource(L.all);
+        }
       } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          setError(err?.message || "An unknown error occurred.");
-        }
+        if (!cancelled) setError(err?.message || "An unknown error occurred.");
       } finally {
-        if (!ac.signal.aborted) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
     load();
     return () => {
-      ac.abort();
+      cancelled = true;
+      controller.abort();
     };
   }, [activeSourceKeys, reload, idFor]);
 
@@ -549,7 +571,10 @@ export default function InsuranceNewsClient() {
     return list;
   }, [news, deferredQuery, sort, selectedTopic, selectedSource]);
 
-  const visible = React.useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
+  const visible = React.useMemo(
+    () => filtered.slice(0, page * PAGE_SIZE),
+    [filtered, page]
+  );
   const hasMore = visible.length < filtered.length;
 
   const toggleBookmark = React.useCallback(
@@ -571,21 +596,24 @@ export default function InsuranceNewsClient() {
         await navigator.clipboard.writeText(url);
         toast({ title: "Copied", description: "Link copied to clipboard." });
       } catch {
-        toast({ title: "Copy failed", description: "Unable to copy link.", variant: "destructive" });
+        toast({
+          title: "Copy failed",
+          description: "Unable to copy link.",
+          variant: "destructive",
+        });
       }
     },
     [toast]
   );
 
-  const toggleActiveSource = React.useCallback(
-    (key: string) => {
-      setActiveSourceKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
-    },
-    [setActiveSourceKeys]
-  );
+  const toggleActiveSource = React.useCallback((key: string) => {
+    setActiveSourceKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  }, [setActiveSourceKeys]);
 
   return (
-    <TooltipProvider>
+    <>
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -597,9 +625,9 @@ export default function InsuranceNewsClient() {
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <UIButton variant="outline" className="whitespace-nowrap">
+                <Btn variant="outline" className="whitespace-nowrap">
                   {L.sources}
-                </UIButton>
+                </Btn>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuLabel>Active feeds</DropdownMenuLabel>
@@ -621,22 +649,28 @@ export default function InsuranceNewsClient() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <UIButton variant="outline" onClick={() => setReload((r) => r + 1)} aria-label={L.refresh}>
-                  <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
-                </UIButton>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="space-y-1 p-2">
-                  {lastUpdated && (
-                    <div className="text-xs font-semibold" suppressHydrationWarning>
-                      Updated {formatRelative(lastUpdated)}
-                    </div>
-                  )}
-                </div>
-              </TooltipContent>
-            </Tooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Btn
+                    variant="outline"
+                    onClick={() => setReload((r) => r + 1)}
+                    aria-label={L.refresh}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" /> {L.refresh}
+                  </Btn>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="space-y-1 p-2">
+                    {mounted && lastUpdated && (
+                      <div className="text-xs font-semibold">
+                        Updated {formatRelative(lastUpdated)}
+                      </div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
@@ -647,8 +681,8 @@ export default function InsuranceNewsClient() {
               {L.items(filtered.length)}
             </Badge>
             <Separator orientation="vertical" className="h-4" />
-            {lastUpdated && (
-              <span className="hidden sm:inline" suppressHydrationWarning>
+            {mounted && lastUpdated && (
+              <span className="hidden sm:inline">
                 Updated {formatRelative(lastUpdated)}
               </span>
             )}
@@ -657,40 +691,76 @@ export default function InsuranceNewsClient() {
           <div className="flex items-center gap-2">
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L.search} className="pl-8" aria-label="Search news" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={L.search}
+                className="pl-8"
+                aria-label="Search news"
+              />
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <UIButton variant="outline" className="whitespace-nowrap">
+                <Btn variant="outline" className="whitespace-nowrap">
                   {L.sort}
-                </UIButton>
+                </Btn>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuLabel>{L.sortBy}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setSort("newest")}>
-                  {L.newest} {sort === "newest" && <Badge className="ml-auto" variant="secondary">Active</Badge>}
+                  {L.newest}{" "}
+                  {sort === "newest" && (
+                    <Badge className="ml-auto" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSort("oldest")}>
-                  {L.oldest} {sort === "oldest" && <Badge className="ml-auto" variant="secondary">Active</Badge>}
+                  {L.oldest}{" "}
+                  {sort === "oldest" && (
+                    <Badge className="ml-auto" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSort("az")}>
-                  {L.az} {sort === "az" && <Badge className="ml-auto" variant="secondary">Active</Badge>}
+                  {L.az}{" "}
+                  {sort === "az" && (
+                    <Badge className="ml-auto" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSort("za")}>
-                  {L.za} {sort === "za" && <Badge className="ml-auto" variant="secondary">Active</Badge>}
+                  {L.za}{" "}
+                  {sort === "za" && (
+                    <Badge className="ml-auto" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <div className="hidden sm:flex rounded-lg border overflow-hidden">
-              <UIButton variant={view === "grid" ? "secondary" : "ghost"} size="icon" aria-label="Grid view" onClick={() => setView("grid")}>
+              <Btn
+                variant={view === "grid" ? "secondary" : "ghost"}
+                size="icon"
+                aria-label="Grid view"
+                onClick={() => setView("grid")}
+              >
                 <LayoutGrid className="h-4 w-4" />
-              </UIButton>
-              <UIButton variant={view === "list" ? "secondary" : "ghost"} size="icon" aria-label="List view" onClick={() => setView("list")}>
+              </Btn>
+              <Btn
+                variant={view === "list" ? "secondary" : "ghost"}
+                size="icon"
+                aria-label="List view"
+                onClick={() => setView("list")}
+              >
                 <ListIcon className="h-4 w-4" />
-              </UIButton>
+              </Btn>
             </div>
           </div>
         </div>
@@ -700,10 +770,23 @@ export default function InsuranceNewsClient() {
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex items-center gap-2 pb-2">
               {sourceChips.map(({ source, count }) => (
-                <UIButton key={source} size="sm" variant={selectedSource === source ? "secondary" : "outline"} className="rounded-full" onClick={() => setSelectedSource(source)}>
+                <Btn
+                  key={source}
+                  aria-label={`Filter by source ${source}`}
+                  onClick={() => setSelectedSource(source)}
+                  className={cx(
+                    "rounded-full border px-3 py-1 h-auto",
+                    selectedSource === source ? "bg-secondary" : "bg-background"
+                  )}
+                >
                   {source}
-                  <Badge variant="secondary" className="ml-2 rounded-full px-1.5 text-[10px]">{count}</Badge>
-                </UIButton>
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 rounded-full px-1.5 text-[10px]"
+                  >
+                    {count}
+                  </Badge>
+                </Btn>
               ))}
             </div>
           </ScrollArea>
@@ -714,10 +797,23 @@ export default function InsuranceNewsClient() {
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex items-center gap-2 pb-2">
               {topicChips.map(({ topic, count }) => (
-                <UIButton key={topic} size="sm" variant={selectedTopic === topic ? "secondary" : "outline"} className="rounded-full" onClick={() => setSelectedTopic(topic)}>
+                <Btn
+                  key={topic}
+                  aria-label={`Filter by topic ${topic}`}
+                  onClick={() => setSelectedTopic(topic)}
+                  className={cx(
+                    "rounded-full border px-3 py-1 h-auto",
+                    selectedTopic === topic ? "bg-secondary" : "bg-background"
+                  )}
+                >
                   {topic}
-                  <Badge variant="secondary" className="ml-2 rounded-full px-1.5 text-[10px]">{count}</Badge>
-                </UIButton>
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 rounded-full px-1.5 text-[10px]"
+                  >
+                    {count}
+                  </Badge>
+                </Btn>
               ))}
             </div>
           </ScrollArea>
@@ -726,7 +822,10 @@ export default function InsuranceNewsClient() {
 
       {/* Loading */}
       {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 mt-6" aria-busy>
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 mt-6"
+          aria-busy
+        >
           {Array.from({ length: 9 }).map((_, i) => (
             <Card key={i}>
               <CardHeader>
@@ -757,7 +856,7 @@ export default function InsuranceNewsClient() {
             <p className="text-sm text-muted-foreground">{error}</p>
           </CardContent>
           <CardFooter>
-            <UIButton onClick={() => setReload((r) => r + 1)}>{L.refresh}</UIButton>
+            <Btn onClick={() => setReload((r) => r + 1)}>{L.refresh}</Btn>
           </CardFooter>
         </Card>
       )}
@@ -767,13 +866,38 @@ export default function InsuranceNewsClient() {
         <EmptyState />
       ) : (
         <AnimatePresence mode="popLayout">
-          <div className={`mt-6 ${view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6" : "space-y-4 sm:space-y-6"}`}>
+          <div
+            className={`mt-6 ${
+              view === "grid"
+                ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6"
+                : "space-y-4 sm:space-y-6"
+            }`}
+          >
             {visible.map((item) => (
-              <motion.div key={idFor(item)} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: 0.18 }}>
+              <motion.div
+                key={idFor(item)}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.18 }}
+              >
                 {view === "grid" ? (
-                  <NewsCardGrid item={item} isBookmarked={!!bookmarks[idFor(item)]} onBookmark={() => toggleBookmark(idFor(item))} onCopy={() => copyLink(item.link)} mounted={mounted} />
+                  <NewsCardGrid
+                    item={item}
+                    isBookmarked={!!bookmarks[idFor(item)]}
+                    onBookmark={() => toggleBookmark(idFor(item))}
+                    onCopy={() => copyLink(item.link)}
+                    mounted={mounted}
+                  />
                 ) : (
-                  <NewsCardList item={item} isBookmarked={!!bookmarks[idFor(item)]} onBookmark={() => toggleBookmark(idFor(item))} onCopy={() => copyLink(item.link)} mounted={mounted} />
+                  <NewsCardList
+                    item={item}
+                    isBookmarked={!!bookmarks[idFor(item)]}
+                    onBookmark={() => toggleBookmark(idFor(item))}
+                    onCopy={() => copyLink(item.link)}
+                    mounted={mounted}
+                  />
                 )}
               </motion.div>
             ))}
@@ -784,12 +908,12 @@ export default function InsuranceNewsClient() {
       {/* Load more */}
       {!loading && !error && hasMore && (
         <div className="flex justify-center mt-8">
-          <UIButton variant="outline" onClick={() => setPage((p) => p + 1)}>
+          <Btn variant="outline" onClick={() => setPage((p) => p + 1)}>
             Load more
-          </UIButton>
+          </Btn>
         </div>
       )}
-    </TooltipProvider>
+    </>
   );
 }
 
@@ -814,8 +938,18 @@ function TopicBadges({ meta }: { meta: ReturnType<typeof deriveMeta> }) {
   );
 }
 
-function NewsCardGrid({ item, isBookmarked, onBookmark, onCopy, mounted }: {
-  item: EnrichedNews; isBookmarked: boolean; onBookmark: () => void; onCopy: () => void; mounted: boolean;
+function NewsCardGrid({
+  item,
+  isBookmarked,
+  onBookmark,
+  onCopy,
+  mounted,
+}: {
+  item: EnrichedNews;
+  isBookmarked: boolean;
+  onBookmark: () => void;
+  onCopy: () => void;
+  mounted: boolean;
 }) {
   const meta = deriveMeta(item);
   return (
@@ -823,14 +957,18 @@ function NewsCardGrid({ item, isBookmarked, onBookmark, onCopy, mounted }: {
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <CardTitle className="text-lg leading-snug line-clamp-2">{item.title}</CardTitle>
+            <CardTitle className="text-lg leading-snug line-clamp-2">
+              {item.title}
+            </CardTitle>
             <CardDescription className="mt-1 inline-flex items-center gap-1">
               <CalendarDays className="h-3.5 w-3.5" />
-              <span suppressHydrationWarning>
+              <span>
                 {formatAbsolute(item.pubDate)} {mounted && `• ${formatRelative(item.pubDate)}`}
               </span>
             </CardDescription>
-            <div className="mt-1 text-[11px] text-muted-foreground">{item._sourceName}</div>
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              {item._sourceName}
+            </div>
             <TopicBadges meta={meta} />
           </div>
           <BookmarkButton active={isBookmarked} onClick={onBookmark} />
@@ -839,32 +977,58 @@ function NewsCardGrid({ item, isBookmarked, onBookmark, onCopy, mounted }: {
       <CardContent className="flex-1">
         {item.thumbnail && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.thumbnail} alt={item.title} data-ai-hint="news article" className="mb-3 w-full rounded-lg aspect-video object-cover" />
+          <img
+            src={item.thumbnail}
+            alt={item.title}
+            data-ai-hint="news article"
+            className="mb-3 w-full rounded-lg aspect-video object-cover"
+          />
         )}
-        <p className="text-sm text-muted-foreground line-clamp-3">{stripHtml(item.description)}</p>
+        <p className="text-sm text-muted-foreground line-clamp-3">
+          {stripHtml(item.description)}
+        </p>
       </CardContent>
       <CardFooter className="gap-2">
-        <UIButton asChild variant="outline" className="w-full">
-          <a href={item.link} target="_blank" rel="noopener noreferrer" aria-label={`${L.read}: ${item.title}`}>
-            {L.read}
-            <ArrowUpRight className="ml-2 h-4 w-4" />
-          </a>
-        </UIButton>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <UIButton variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
-              <CopyIcon className="h-4 w-4" />
-            </UIButton>
-          </TooltipTrigger>
-          <TooltipContent>{L.copy}</TooltipContent>
-        </Tooltip>
+        <a
+          href={item.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${L.read}: ${item.title}`}
+          className={cx(
+            "w-full inline-flex items-center justify-center rounded-md border h-9 px-4 py-2 text-sm",
+            "border-input bg-background hover:bg-accent hover:text-accent-foreground"
+          )}
+        >
+          {L.read}
+          <ArrowUpRight className="ml-2 h-4 w-4" />
+        </a>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Btn variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
+                <CopyIcon className="h-4 w-4" />
+              </Btn>
+            </TooltipTrigger>
+            <TooltipContent>{L.copy}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </CardFooter>
     </Card>
   );
 }
 
-function NewsCardList({ item, isBookmarked, onBookmark, onCopy, mounted }: {
-  item: EnrichedNews; isBookmarked: boolean; onBookmark: () => void; onCopy: () => void; mounted: boolean;
+function NewsCardList({
+  item,
+  isBookmarked,
+  onBookmark,
+  onCopy,
+  mounted,
+}: {
+  item: EnrichedNews;
+  isBookmarked: boolean;
+  onBookmark: () => void;
+  onCopy: () => void;
+  mounted: boolean;
 }) {
   const meta = deriveMeta(item);
   return (
@@ -872,39 +1036,59 @@ function NewsCardList({ item, isBookmarked, onBookmark, onCopy, mounted }: {
       <div className="flex gap-4 p-4 sm:p-6">
         {item.thumbnail && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.thumbnail} alt={item.title} data-ai-hint="news article" className="w-44 rounded-lg aspect-video object-cover" />
+          <img
+            src={item.thumbnail}
+            alt={item.title}
+            data-ai-hint="news article"
+            className="w-44 rounded-lg aspect-video object-cover"
+          />
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <CardTitle className="text-lg leading-snug line-clamp-1">{item.title}</CardTitle>
+              <CardTitle className="text-lg leading-snug line-clamp-1">
+                {item.title}
+              </CardTitle>
               <CardDescription className="mt-1 inline-flex items-center gap-1">
                 <CalendarDays className="h-3.5 w-3.5" />
-                <span suppressHydrationWarning>
+                <span>
                   {formatAbsolute(item.pubDate)} {mounted && `• ${formatRelative(item.pubDate)}`}
                 </span>
               </CardDescription>
-              <div className="mt-1 text-[11px] text-muted-foreground">{item._sourceName}</div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                {item._sourceName}
+              </div>
               <TopicBadges meta={meta} />
             </div>
             <BookmarkButton active={isBookmarked} onClick={onBookmark} />
           </div>
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{stripHtml(item.description)}</p>
+          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
+            {stripHtml(item.description)}
+          </p>
           <div className="mt-4 flex items-center gap-2">
-            <UIButton asChild variant="outline">
-              <a href={item.link} target="_blank" rel="noopener noreferrer" aria-label={`${L.read}: ${item.title}`}>
-                {L.read}
-                <ArrowUpRight className="ml-2 h-4 w-4" />
-              </a>
-            </UIButton>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <UIButton variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
-                  <CopyIcon className="h-4 w-4" />
-                </UIButton>
-              </TooltipTrigger>
-              <TooltipContent>{L.copy}</TooltipContent>
-            </Tooltip>
+            <a
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${L.read}: ${item.title}`}
+              className={cx(
+                "inline-flex items-center justify-center rounded-md border h-9 px-4 py-2 text-sm",
+                "border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              )}
+            >
+              {L.read}
+              <ArrowUpRight className="ml-2 h-4 w-4" />
+            </a>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Btn variant="ghost" size="icon" aria-label={L.copy} onClick={onCopy}>
+                    <CopyIcon className="h-4 w-4" />
+                  </Btn>
+                </TooltipTrigger>
+                <TooltipContent>{L.copy}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
@@ -912,16 +1096,33 @@ function NewsCardList({ item, isBookmarked, onBookmark, onCopy, mounted }: {
   );
 }
 
-function BookmarkButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+function BookmarkButton({
+  active,
+  onClick,
+}: {
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <UIButton variant={active ? "secondary" : "ghost"} size="icon" aria-label={active ? "Bookmarked" : "Bookmark"} onClick={onClick}>
-          {active ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-        </UIButton>
-      </TooltipTrigger>
-      <TooltipContent>{active ? "Bookmarked" : "Bookmark"}</TooltipContent>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Btn
+            variant={active ? "secondary" : "ghost"}
+            size="icon"
+            aria-label={active ? "Bookmarked" : "Bookmark"}
+            onClick={onClick}
+          >
+            {active ? (
+              <BookmarkCheck className="h-4 w-4" />
+            ) : (
+              <Bookmark className="h-4 w-4" />
+            )}
+          </Btn>
+        </TooltipTrigger>
+        <TooltipContent>{active ? "Bookmarked" : "Bookmark"}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
