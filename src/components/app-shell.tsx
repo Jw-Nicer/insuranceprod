@@ -37,7 +37,6 @@ import { Separator } from "@/components/ui/separator";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useTheme } from "next-themes";
 import { Logo } from "@/components/logo";
-import { useLocalStorage } from "@/hooks/use-local-storage";
 
 /************************************
  * Types
@@ -178,39 +177,26 @@ const NavLink: React.FC<{ item: NavItem; pathname: string; collapsed?: boolean }
  * Sidebar (desktop)
  ************************************/
 const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
-  const [collapsed, setCollapsed] = useLocalStorage<boolean>("sidebar:collapsed", false);
-  const [isMounted, setIsMounted] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState(false);
 
   React.useEffect(() => {
-    setIsMounted(true);
+    try {
+      const saved = localStorage.getItem("sidebar:collapsed");
+      if (saved != null) setCollapsed(saved === "true");
+    } catch {
+      // ignore
+    }
   }, []);
 
-  if (!isMounted) {
-    return (
-        <aside
-            className={cn(
-                "relative hidden sm:flex flex-col border-r bg-card text-card-foreground transition-[width] duration-300 w-64"
-            )}
-            aria-label="Primary"
-        >
-            <div className="p-3 h-14" />
-            <Separator />
-            <div className="flex-1 px-2 py-3 space-y-4">
-               {navigation.map(group => (
-                 <div key={group.title}>
-                    <div className="px-3 h-4 w-20 bg-muted rounded animate-pulse mb-3" />
-                    <div className="space-y-1">
-                        {group.items.map(item => (
-                             <div key={item.href} className="h-9 w-full bg-muted rounded animate-pulse" />
-                        ))}
-                    </div>
-                 </div>
-               ))}
-            </div>
-        </aside>
-    );
-  }
-
+  const toggleSidebar = () => {
+    const nextState = !collapsed;
+    setCollapsed(nextState);
+    try {
+      localStorage.setItem("sidebar:collapsed", String(nextState));
+    } catch {
+      // ignore
+    }
+  };
 
   return (
     <aside
@@ -244,7 +230,7 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
            >
-            <Button variant="ghost" size="icon" aria-label="Collapse sidebar" onClick={() => setCollapsed(true)}>
+            <Button variant="ghost" size="icon" aria-label="Collapse sidebar" onClick={toggleSidebar}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
            </motion.div>
@@ -262,7 +248,7 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-full" aria-label="Expand sidebar" onClick={() => setCollapsed(false)}>
+                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-full" aria-label="Expand sidebar" onClick={toggleSidebar}>
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                 </TooltipTrigger>
@@ -514,3 +500,5 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 export default AppShell;
+
+    
