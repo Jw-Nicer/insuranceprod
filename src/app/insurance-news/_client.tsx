@@ -455,15 +455,10 @@ export default function InsuranceNewsClient() {
   }, [activeSourceKeys]);
 
   React.useEffect(() => {
-    fetchNews();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  React.useEffect(() => {
     if(isMounted) {
       fetchNews();
     }
-  }, [activeSourceKeys, fetchNews, isMounted]);
+  }, [isMounted, fetchNews]);
 
 
   const topicChips = React.useMemo(() => {
@@ -986,3 +981,5 @@ function EmptyState() {
     </Card>
   );
 }
+
+    
