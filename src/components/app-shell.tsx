@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -462,7 +461,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Topbar onOpenCommand={() => setOpenCommand(true)} />
 
         {/* Page container */}
-        <main className="flex-1 p-4 sm:p-6">
+        <main className="flex-1">
           {children}
         </main>
 
@@ -481,4 +480,4 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-    
+export default AppShell;

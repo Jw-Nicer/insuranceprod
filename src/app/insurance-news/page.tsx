@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { AppShell } from "@/components/app-shell";
+import AppShell from "@/components/app-shell";
 import {
   Card,
   CardHeader,
@@ -538,7 +537,7 @@ export default function InsuranceNewsPage() {
   
   return (
     <AppShell>
-      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
+      <main className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -733,92 +732,92 @@ export default function InsuranceNewsPage() {
             </div>
           </ScrollArea>
         </div>
-      </div>
   
-      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-[env(safe-area-inset-bottom)]">
-      {/* Loading */}
-      {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6" aria-busy>
-          {Array.from({ length: 9 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="mt-2 h-4 w-1/3" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-36 w-full rounded-lg" />
-                <Skeleton className="mt-3 h-4 w-full" />
-                <Skeleton className="mt-2 h-4 w-5/6" />
-              </CardContent>
-              <CardFooter>
-                <Skeleton className="h-9 w-full" />
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
-  
-      {/* Error */}
-      {!loading && error && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-destructive">{L.errorTitle}</CardTitle>
-            <CardDescription>{L.errorDesc}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{error}</p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={fetchNews}>{L.refresh}</Button>
-          </CardFooter>
-        </Card>
-      )}
-  
-      {/* Grid/List */}
-      {!loading && !error && (filtered.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <AnimatePresence mode="popLayout">
-          <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6" : "space-y-4 sm:space-y-6"}>
-            {visible.map((item) => (
-              <motion.div
-                key={idFor(item)}
-                layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.18 }}
-              >
-                {view === "grid" ? (
-                  <NewsCardGrid
-                    item={item}
-                    isBookmarked={!!bookmarks[idFor(item)]}
-                    onBookmark={() => toggleBookmark(idFor(item))}
-                    onCopy={() => copyLink(item.link)}
-                  />
-                ) : (
-                  <NewsCardList
-                    item={item}
-                    isBookmarked={!!bookmarks[idFor(item)]}
-                    onBookmark={() => toggleBookmark(idFor(item))}
-                    onCopy={() => copyLink(item.link)}
-                  />
-                )}
-              </motion.div>
+        {/* Loading */}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 mt-6" aria-busy>
+            {Array.from({ length: 9 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="mt-2 h-4 w-1/3" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-36 w-full rounded-lg" />
+                  <Skeleton className="mt-3 h-4 w-full" />
+                  <Skeleton className="mt-2 h-4 w-5/6" />
+                </CardContent>
+                <CardFooter>
+                  <Skeleton className="h-9 w-full" />
+                </CardFooter>
+              </Card>
             ))}
           </div>
-        </AnimatePresence>
-      ))}
-  
-      {/* Load more */}
-      {!loading && !error && hasMore && (
-        <div className="flex justify-center mt-8">
-          <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
-            Load more
-          </Button>
-        </div>
-      )}
-      </div>
+        )}
+    
+        {/* Error */}
+        {!loading && error && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-destructive">{L.errorTitle}</CardTitle>
+              <CardDescription>{L.errorDesc}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={fetchNews}>{L.refresh}</Button>
+            </CardFooter>
+          </Card>
+        )}
+    
+        {/* Grid/List */}
+        {!loading && !error && (filtered.length === 0 ? (
+          <div className="mt-6">
+            <EmptyState />
+          </div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            <div className={`mt-6 ${view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6" : "space-y-4 sm:space-y-6"}`}>
+              {visible.map((item) => (
+                <motion.div
+                  key={idFor(item)}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {view === "grid" ? (
+                    <NewsCardGrid
+                      item={item}
+                      isBookmarked={!!bookmarks[idFor(item)]}
+                      onBookmark={() => toggleBookmark(idFor(item))}
+                      onCopy={() => copyLink(item.link)}
+                    />
+                  ) : (
+                    <NewsCardList
+                      item={item}
+                      isBookmarked={!!bookmarks[idFor(item)]}
+                      onBookmark={() => toggleBookmark(idFor(item))}
+                      onCopy={() => copyLink(item.link)}
+                    />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </AnimatePresence>
+        ))}
+    
+        {/* Load more */}
+        {!loading && !error && hasMore && (
+          <div className="flex justify-center mt-8">
+            <Button variant="outline" onClick={() => setPage((p) => p + 1)}>
+              Load more
+            </Button>
+          </div>
+        )}
+      </main>
     </AppShell>
   );
 }
