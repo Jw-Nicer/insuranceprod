@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -177,14 +177,20 @@ const NavLink: React.FC<{ item: NavItem; pathname: string; collapsed?: boolean }
  * Sidebar (desktop)
  ************************************/
 const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
+  // 1. Initialize state to the server-rendered default (false).
   const [collapsed, setCollapsed] = React.useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
 
+  // 2. After mount on the client, read from localStorage.
   React.useEffect(() => {
+    setIsMounted(true);
     try {
       const saved = localStorage.getItem("sidebar:collapsed");
-      if (saved != null) setCollapsed(saved === "true");
+      if (saved !== null) {
+        setCollapsed(saved === "true");
+      }
     } catch {
-      // ignore
+      // It's fine to ignore this, we'll just use the default.
     }
   }, []);
 
@@ -194,29 +200,32 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
     try {
       localStorage.setItem("sidebar:collapsed", String(nextState));
     } catch {
-      // ignore
+      // It's fine to ignore this.
     }
   };
+
+  // 3. Conditionally apply classes, but the initial render on client and server will match.
+  const isActuallyCollapsed = isMounted && collapsed;
 
   return (
     <aside
       className={cn(
         "relative hidden sm:flex flex-col border-r bg-card text-card-foreground transition-[width] duration-300",
-        collapsed ? "w-[80px]" : "w-64"
+        isActuallyCollapsed ? "w-[80px]" : "w-64"
       )}
       aria-label="Primary"
     >
       {/* Header */}
-      <div className={cn("flex items-center h-14", collapsed ? "justify-center" : "justify-between p-3")}
+      <div className={cn("flex items-center h-14", isActuallyCollapsed ? "justify-center" : "justify-between p-3")}
         style={{
           background: "radial-gradient(120px 60px at 10% 0%, hsl(var(--primary)/0.12), transparent)",
         }}
       >
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}
+        <div className={cn("flex items-center gap-3", isActuallyCollapsed && "justify-center")}
           aria-label="Brand"
         >
           <Logo className="h-8 w-8" />
-          {!collapsed && (
+          {!isActuallyCollapsed && (
             <motion.span
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -225,7 +234,7 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
             </motion.span>
           )}
         </div>
-        {!collapsed && (
+        {!isActuallyCollapsed && (
            <motion.div
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -238,7 +247,7 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
       </div>
 
       <AnimatePresence>
-      {collapsed && (
+      {isActuallyCollapsed && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -267,14 +276,14 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
           <nav className="flex flex-col gap-4">
             {navigation.map((group) => (
               <div key={group.title}>
-                {!collapsed && (
+                {!isActuallyCollapsed && (
                   <h3 className="px-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                     {group.title}
                   </h3>
                 )}
                 <div className="flex flex-col gap-1">
                   {group.items.map((item) => (
-                    <NavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
+                    <NavLink key={item.href} item={item} pathname={pathname} collapsed={isActuallyCollapsed} />
                   ))}
                 </div>
               </div>
@@ -287,7 +296,7 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
       <div className={cn("p-3 mt-auto")}
         style={{ background: "linear-gradient(180deg, transparent, hsl(var(--muted)/0.3))" }}
       >
-        {!collapsed ? (
+        {!isActuallyCollapsed ? (
           <div className="rounded-xl border bg-muted/30 p-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2 mb-1">
               <Globe className="h-3.5 w-3.5" />
@@ -311,6 +320,7 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
     </aside>
   );
 };
+
 
 /************************************
  * Mobile Sidebar

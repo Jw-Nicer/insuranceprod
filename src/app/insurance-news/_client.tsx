@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -125,7 +126,8 @@ const stripHtml = (html: string) => {
 function formatAbsolute(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "";
-  if (typeof window === "undefined") return d.toLocaleDateString();
+  // Return a non-locale specific format on server to prevent mismatch
+  if (typeof window === "undefined") return d.toLocaleDateString('en-CA');
   try {
     return new Intl.DateTimeFormat(navigator?.language || "en-US", {
       year: "numeric",
@@ -140,7 +142,7 @@ function formatAbsolute(date: Date | string) {
 function formatRelative(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "";
-  if (typeof window === "undefined") return "";
+  if (typeof window === "undefined") return ""; // Don't render on server
   const diff = (d.getTime() - Date.now()) / 1000;
   const rtf = new Intl.RelativeTimeFormat(navigator?.language || "en-US", { numeric: "auto" });
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -157,6 +159,7 @@ function formatRelative(date: Date | string) {
   }
   return rtf.format(Math.round(diff), "second");
 }
+
 
 /************************************
  * Keyword helpers
@@ -450,7 +453,7 @@ export default function InsuranceNewsClient() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="space-y-1 p-2">
-                    {lastUpdated && (
+                    {isMounted && lastUpdated && (
                       <div className="text-xs font-semibold">
                         {`Last updated: ${formatRelative(lastUpdated)}`}
                       </div>
@@ -712,6 +715,8 @@ function NewsCardGrid({
   onCopy: () => void;
 }) {
   const meta = deriveMeta(item);
+  const [isMounted, setIsMounted] = React.useState(false);
+  React.useEffect(() => { setIsMounted(true); }, []);
   return (
     <Card className="flex h-full flex-col hover:shadow-lg transition-all overflow-hidden break-words">
       <CardHeader>
@@ -721,7 +726,8 @@ function NewsCardGrid({
             <CardDescription className="mt-1 inline-flex items-center gap-1">
               <CalendarDays className="h-3.5 w-3.5" />
               <span>
-                {formatAbsolute(item.pubDate)} • {formatRelative(item.pubDate)}
+                {formatAbsolute(item.pubDate)}
+                {isMounted && ` • ${formatRelative(item.pubDate)}`}
               </span>
             </CardDescription>
             <div className="mt-1 text-[11px] text-muted-foreground">{item._sourceName}</div>
@@ -776,6 +782,8 @@ function NewsCardList({
   onCopy: () => void;
 }) {
   const meta = deriveMeta(item);
+  const [isMounted, setIsMounted] = React.useState(false);
+  React.useEffect(() => { setIsMounted(true); }, []);
   return (
     <Card className="hover:shadow-lg transition-all overflow-hidden break-words">
       <div className="flex gap-4 p-4 sm:p-6">
@@ -795,7 +803,8 @@ function NewsCardList({
               <CardDescription className="mt-1 inline-flex items-center gap-1">
                 <CalendarDays className="h-3.5 w-3.5" />
                 <span>
-                  {formatAbsolute(item.pubDate)} • {formatRelative(item.pubDate)}
+                  {formatAbsolute(item.pubDate)}
+                  {isMounted && ` • ${formatRelative(item.pubDate)}`}
                 </span>
               </CardDescription>
               <div className="mt-1 text-[11px] text-muted-foreground">{item._sourceName}</div>
@@ -861,3 +870,5 @@ function EmptyState() {
     </Card>
   );
 }
+
+    
