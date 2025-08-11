@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, Reorder } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   PlusCircle,
   ArrowUpRight,
@@ -222,6 +222,14 @@ const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
     </div>
 );
 
+// Function to move an item in an array
+function moveItem<T>(array: T[], from: number, to: number): T[] {
+    const newArray = [...array];
+    const [item] = newArray.splice(from, 1);
+    newArray.splice(to, 0, item);
+    return newArray;
+}
+
 /************************************
  * Main Page
  ************************************/
@@ -234,6 +242,9 @@ export default function GptsPage() {
   const [deletingIndex, setDeletingIndex] = React.useState<number | null>(null);
   const [mounted, setMounted] = React.useState(false);
 
+  // For drag-and-drop
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+
   React.useEffect(() => {
     setMounted(true);
   }, []);
@@ -243,12 +254,11 @@ export default function GptsPage() {
     gpt.description.toLowerCase().includes(searchQuery.toLowerCase())
   ), [gpts, searchQuery]);
 
-  const setFilteredGpts = (reorderedGpts: Gpt[]) => {
-    // Only allow reordering if search is not active
-    if (!searchQuery) {
-        setGpts(reorderedGpts);
-    }
-  }
+  const handleReorder = (from: number, to: number) => {
+    if (searchQuery) return; // Don't reorder when searching
+    setGpts(moveItem(gpts, from, to));
+  };
+
 
   const openAddDialog = () => {
     setEditingIndex(null);
@@ -332,27 +342,29 @@ export default function GptsPage() {
                 {!mounted ? (
                   <p className="py-12 text-center text-gray-500">Loading...</p>
                 ) : filteredGpts.length > 0 ? (
-                    <Reorder.Group
-                        axis="y"
-                        as="div"
-                        values={filteredGpts}
-                        onReorder={setFilteredGpts}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                    >
-                    <AnimatePresence>
-                    {filteredGpts.map((gpt, index) => (
-                        <Reorder.Item 
-                            as="div" 
-                            key={gpt.name} 
-                            value={gpt}
-                            dragListener={isDraggable}
-                            className={isDraggable ? 'cursor-grab' : ''}
-                        >
-                            <GptCard gpt={gpt} index={index} onEdit={openEditDialog} onDelete={startDelete} isDraggable={isDraggable} />
-                        </Reorder.Item>
-                    ))}
-                    </AnimatePresence>
-                    </Reorder.Group>
+                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredGpts.map((gpt, index) => (
+                           <motion.div
+                            key={gpt.name}
+                            layout
+                            drag={isDraggable}
+                            onDragStart={() => setDraggedIndex(index)}
+                            onDragEnd={() => setDraggedIndex(null)}
+                            onViewportBoxUpdate={(_viewportBox, delta) => {
+                              if (isDraggable && draggedIndex !== null) {
+                                  const newIndex = index + Math.round(delta.x.translate / 200) + Math.round(delta.y.translate / 200) * 4;
+                                  if (newIndex !== draggedIndex && newIndex >= 0 && newIndex < gpts.length) {
+                                      handleReorder(draggedIndex, newIndex);
+                                      setDraggedIndex(newIndex);
+                                  }
+                              }
+                            }}
+                            className={isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}
+                            >
+                                <GptCard gpt={gpt} index={index} onEdit={openEditDialog} onDelete={startDelete} isDraggable={isDraggable} />
+                           </motion.div>
+                        ))}
+                    </motion.div>
                 ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <EmptyState onAdd={openAddDialog} />
@@ -387,3 +399,5 @@ export default function GptsPage() {
     </AppShell>
   );
 }
+
+    
