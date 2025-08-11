@@ -110,9 +110,9 @@ const initialGpts: Gpt[] = [
   { name: "Primary Umbrella", description: "A GPT for primary umbrella insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f43356c84819184355c85069c3c9e-primary-umbrella-insurance-gpt", recommendedModel: "GPT-4o" },
   { name: "Loss Run", description: "A GPT for loss run analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-2", recommendedModel: "GPT-4o" },
   { name: "GPT 4o", description: "A GPT for GPT 4o analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-3", recommendedModel: "GPT-4o" },
-  { name: "GPT 5", description: "A GPT for GPT 5 analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-4", recommendedModel: "GPT-5" },
-  { name: "GPT 5 Thinking", description: "A GPT for GPT 5 Thinking analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-5", recommendedModel: "GPT-5 Thinking" },
-  { name: "GPT 5 Pro", description: "A GPT for GPT 5 Pro analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-6", recommendedModel: "GPT-5 Pro" },
+  { name: "GPT 5", description: "A GPT for GPT 5 analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-4", recommendedModel: "GPT-4o" },
+  { name: "GPT 5 Thinking", description: "A GPT for GPT 5 Thinking analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-5", recommendedModel: "GPT-4o" },
+  { name: "GPT 5 Pro", description: "A GPT for GPT 5 Pro analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-6", recommendedModel: "GPT-4o" },
 ];
 
 const emptyGpt: Gpt = { name: "", description: "", url: "", recommendedModel: "" };
