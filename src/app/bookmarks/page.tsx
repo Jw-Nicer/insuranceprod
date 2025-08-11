@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -105,6 +106,11 @@ const normalizeUrl = (u: string) => {
 export default function Page() {
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>("app:bookmarks", []);
   const [notes, setNotes] = useLocalStorage<Note[]>("app:notes", []);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [q, setQ] = useState("");
   const dq = useDeferredValue(q);
@@ -186,7 +192,9 @@ export default function Page() {
           <Card className="lg:col-span-2">
             <Section title="Bookmarks" subtitle="Tags, folders, expiry reminders, favorites." />
             <div className="p-4">
-              {filtered.length === 0 ? (
+              {!mounted ? (
+                <p className="py-12 text-center text-gray-500">Loading bookmarks...</p>
+              ) : filtered.length === 0 ? (
                 <p className="py-12 text-center text-gray-500">No bookmarks yet. Add one on the right.</p>
               ) : (
                 <div className="space-y-3">
@@ -268,7 +276,9 @@ export default function Page() {
             <Card>
               <Section title={<div className="flex items-center gap-2"><CalendarClock className="h-5 w-5"/> Expiring Soon (≤ 3 weeks)</div>} />
               <div className="p-4">
-                {expiring.length === 0 ? (
+                {!mounted ? (
+                  <p className="text-sm text-gray-600">Loading...</p>
+                ) : expiring.length === 0 ? (
                   <p className="text-sm text-gray-600">Nothing expiring soon.</p>
                 ) : (
                   <div className="space-y-3">
@@ -293,7 +303,9 @@ export default function Page() {
           <Card className="lg:col-span-2">
             <Section title={<div className="flex items-center gap-2"><StickyNote className="h-5 w-5"/> Notes & Research</div>} subtitle="Quick notes with tags and optional links to bookmarks." />
             <div className="p-4">
-              {notes.length === 0 ? (
+              {!mounted ? (
+                 <p className="py-12 text-center text-gray-500">Loading notes...</p>
+              ) : notes.length === 0 ? (
                 <p className="py-12 text-center text-gray-500">You haven’t saved any notes yet.</p>
               ) : (
                 <div className="space-y-3">
@@ -368,3 +380,5 @@ export default function Page() {
     </div>
   );
 }
+
+    
