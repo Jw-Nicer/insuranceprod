@@ -188,9 +188,11 @@ export default function LossRunPage() {
 
   return (
     <AppShell>
-      <LossRunMetrics />
       {!premiumHistory ? (
         <>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold tracking-tight">Loss Run Analysis</h1>
+          </div>
           <LossRunInstructions />
           <div className="mt-8">
             <Card>
@@ -238,6 +240,7 @@ export default function LossRunPage() {
         </>
       ) : (
         <div className="animate-in fade-in-50 duration-500">
+           <LossRunMetrics />
           <div className="flex justify-end mb-4">
             <Button onClick={handleReset} variant="outline">
               Upload New File
