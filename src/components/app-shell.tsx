@@ -70,7 +70,7 @@ export const navigation: NavGroup[] = [
     title: "Tools",
     items: [
       { href: "/loss-run", label: "Loss Run", icon: FileText, status: 'dev' },
-      { href: "/bookmarks", label: "Bookmarks & Notes", icon: BookmarkIcon, status: 'dev' },
+      { href: "/bookmarks", label: "Bookmarks & Notes", icon: BookmarkIcon, status: 'live' },
       { href: "/viability-assessment", label: "Viability Assessment", icon: ShieldCheck, status: 'soon' },
       { href: "/insurance-calculator", label: "Insurance Calculator", icon: Calculator, status: 'soon' },
       { href: "/gpts", label: "GPT Collection", icon: BotMessageSquare, status: 'live' },
@@ -513,5 +513,3 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 export default AppShell;
-
-    
