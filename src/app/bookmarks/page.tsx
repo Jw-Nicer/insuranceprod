@@ -2,6 +2,7 @@
 
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Bookmark as BookmarkIcon, StickyNote, PlusCircle, Save, Trash2, Star, StarOff, Tag, Folder, ExternalLink, CalendarClock, RefreshCcw, Search as SearchIcon } from "lucide-react";
+import { AppShell } from "@/components/app-shell";
 
 /************************************
  * Minimal primitives (no external UI deps)
@@ -14,12 +15,12 @@ const Btn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ classNam
 const Inp: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ className = "", ...p }) => <input className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 ${className}`} {...p} />;
 const Txt: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = ({ className = "", ...p }) => <textarea className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 ${className}`} {...p} />;
 const Chip: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] ${className}`}>{children}</span>;
-const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => <div className={`rounded-2xl border bg-white shadow-sm ${className}`}>{children}</div>;
+const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => <div className={`rounded-2xl border bg-background shadow-sm ${className}`}>{children}</div>;
 const Section: React.FC<{ title: React.ReactNode; subtitle?: React.ReactNode; right?: React.ReactNode }> = ({ title, subtitle, right }) => (
   <div className="flex items-start justify-between p-4">
     <div>
       <div className="text-base sm:text-lg font-semibold">{title}</div>
-      {subtitle && <div className="text-xs sm:text-sm text-gray-500 mt-0.5">{subtitle}</div>}
+      {subtitle && <div className="text-xs sm:text-sm text-muted-foreground mt-0.5">{subtitle}</div>}
     </div>
     {right && <div className="ml-4">{right}</div>}
   </div>
@@ -169,23 +170,8 @@ export default function Page() {
 
   /*************** Render ***************/
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-gray-50 to-white text-gray-900">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4">
-          <BookmarkIcon className="h-6 w-6 text-primary" />
-          <div className="mr-auto">
-            <div className="text-lg font-semibold">Bookmarks & Notes</div>
-            <div className="hidden text-xs text-gray-500 sm:block">Curated links with context, notes, and upcoming expiries.</div>
-          </div>
-          <div className="hidden items-center gap-2 sm:flex">
-            <SearchIcon className="h-4 w-4 text-gray-500" />
-            <Inp value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search bookmarks…" className="w-[280px]" aria-label="Search bookmarks" />
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8">
+    <AppShell>
+      <div className="mx-auto w-full max-w-6xl">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Bookmarks */}
           <Card className="lg:col-span-2">
@@ -198,9 +184,9 @@ export default function Page() {
               ) : (
                 <div className="space-y-3">
                   {filtered.map((b) => (
-                    <div key={b.id} className="rounded-xl border bg-gray-50 p-3">
+                    <div key={b.id} className="rounded-xl border bg-muted/30 p-3">
                       <div className="flex items-start gap-3">
-                        <Btn onClick={() => onToggleFav(b.id)} className="mt-1 text-gray-500 hover:text-gray-900">
+                        <Btn onClick={() => onToggleFav(b.id)} className="mt-1 text-muted-foreground hover:text-foreground">
                           {b.favorite ? <Star className="h-5 w-5" /> : <StarOff className="h-5 w-5" />}
                         </Btn>
                         <div className="min-w-0 flex-1">
@@ -208,11 +194,11 @@ export default function Page() {
                             <a href={b.url} target="_blank" rel="noopener noreferrer" className="truncate font-medium hover:underline" title={b.title}>
                               {b.title}
                             </a>
-                            <a href={b.url} target="_blank" rel="noopener noreferrer" className="text-gray-500" aria-label="Open link">
+                            <a href={b.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground" aria-label="Open link">
                               <ExternalLink className="h-4 w-4" />
                             </a>
                           </div>
-                          {b.description && <p className="mt-1 text-sm text-gray-600">{b.description}</p>}
+                          {b.description && <p className="mt-1 text-sm text-muted-foreground">{b.description}</p>}
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                             {b.folder && (
                               <Chip>
@@ -220,7 +206,7 @@ export default function Page() {
                               </Chip>
                             )}
                             {b.tags.map((t) => (
-                              <Chip key={t} className="bg-gray-100">
+                              <Chip key={t} className="bg-secondary text-secondary-foreground">
                                 <Tag className="h-3 w-3" /> {t}
                               </Chip>
                             ))}
@@ -237,10 +223,10 @@ export default function Page() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <Btn className="bg-white" onClick={() => onMarkChecked(b.id)}>
+                          <Btn className="bg-background" onClick={() => onMarkChecked(b.id)}>
                             <RefreshCcw className="h-3 w-3" /> Mark checked
                           </Btn>
-                          <Btn className="text-gray-500 hover:text-red-600" onClick={() => onDeleteBookmark(b.id)} aria-label="Delete bookmark">
+                          <Btn className="text-muted-foreground hover:text-destructive" onClick={() => onDeleteBookmark(b.id)} aria-label="Delete bookmark">
                             <Trash2 className="h-4 w-4" />
                           </Btn>
                         </div>
@@ -264,8 +250,8 @@ export default function Page() {
                 <Txt placeholder="Description / why it matters" value={bm.description || ""} onChange={(e) => setBm((s) => ({ ...s, description: e.target.value }))} rows={3} />
                 <Inp placeholder="Expiry (YYYY-MM-DD)" value={bm.expiresAt || ""} onChange={(e) => setBm((s) => ({ ...s, expiresAt: e.target.value }))} />
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] text-gray-500">Caps: {MAX_BOOKMARKS} • duplicates blocked by URL</p>
-                  <Btn className="bg-black text-white" onClick={onAddBookmark}>
+                  <p className="text-[11px] text-muted-foreground">Caps: {MAX_BOOKMARKS} • duplicates blocked by URL</p>
+                  <Btn className="bg-primary text-primary-foreground" onClick={onAddBookmark}>
                     <Save className="h-4 w-4" /> Save
                   </Btn>
                 </div>
@@ -276,15 +262,15 @@ export default function Page() {
               <Section title={<div className="flex items-center gap-2"><CalendarClock className="h-5 w-5"/> Expiring Soon (≤ 3 weeks)</div>} />
               <div className="p-4">
                 {!mounted ? (
-                  <p className="text-sm text-gray-600">Loading...</p>
+                  <p className="text-sm text-center text-muted-foreground">Loading...</p>
                 ) : expiring.length === 0 ? (
-                  <p className="text-sm text-gray-600">Nothing expiring soon.</p>
+                  <p className="text-sm text-muted-foreground">Nothing expiring soon.</p>
                 ) : (
                   <div className="space-y-3">
                     {expiring.map((b) => (
                       <div key={b.id} className="rounded-lg border bg-amber-50/40 p-3">
                         <div className="font-medium">{b.title}</div>
-                        <div className="text-xs text-gray-600">Expires {b.expiresAt}</div>
+                        <div className="text-xs text-muted-foreground">Expires {b.expiresAt}</div>
                       </div>
                     ))}
                   </div>
@@ -295,7 +281,7 @@ export default function Page() {
         </div>
 
         {/* Divider */}
-        <div className="my-8 h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+        <div className="my-8 h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
 
         {/* Notes */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -303,30 +289,30 @@ export default function Page() {
             <Section title={<div className="flex items-center gap-2"><StickyNote className="h-5 w-5"/> Notes & Research</div>} subtitle="Quick notes with tags and optional links to bookmarks." />
             <div className="p-4">
               {!mounted ? (
-                 <p className="py-12 text-center text-gray-500">Loading notes...</p>
+                 <p className="py-12 text-center text-muted-foreground">Loading notes...</p>
               ) : notes.length === 0 ? (
-                <p className="py-12 text-center text-gray-500">You haven’t saved any notes yet.</p>
+                <p className="py-12 text-center text-muted-foreground">You haven’t saved any notes yet.</p>
               ) : (
                 <div className="space-y-3">
                   {notes.map((n) => (
-                    <Card key={n.id} className="bg-gray-50">
+                    <Card key={n.id} className="bg-muted/30">
                       <div className="p-4">
                         <div className="flex items-start gap-4">
                           <div className="min-w-0 flex-1">
                             <p className="whitespace-pre-wrap text-sm">{n.content}</p>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                               {n.tags?.map((t) => (
-                                <Chip key={t} className="bg-gray-100"><Tag className="h-3 w-3"/> {t}</Chip>
+                                <Chip key={t} className="bg-secondary text-secondary-foreground"><Tag className="h-3 w-3"/> {t}</Chip>
                               ))}
                               {n.linkedBookmarkIds && n.linkedBookmarkIds.length > 0 && (
-                                <span className="text-xs text-gray-600">
+                                <span className="text-xs text-muted-foreground">
                                   Linked: {n.linkedBookmarkIds.map((id) => bookmarks.find((b) => b.id === id)?.title).filter(Boolean).join(", ")}
                                 </span>
                               )}
                             </div>
-                            <p className="mt-2 text-xs text-gray-500">{fmt(n.createdAt)}</p>
+                            <p className="mt-2 text-xs text-muted-foreground">{fmt(n.createdAt)}</p>
                           </div>
-                          <Btn className="text-gray-500 hover:text-red-600" onClick={() => onDeleteNote(n.id)} aria-label="Delete note"><Trash2 className="h-4 w-4"/></Btn>
+                          <Btn className="text-muted-foreground hover:text-destructive" onClick={() => onDeleteNote(n.id)} aria-label="Delete note"><Trash2 className="h-4 w-4"/></Btn>
                         </div>
                       </div>
                     </Card>
@@ -342,15 +328,16 @@ export default function Page() {
               <Txt placeholder="Start typing your note here…" value={note} onChange={(e) => setNote(e.target.value)} rows={6} />
               <Inp placeholder="Tags (comma separated)" value={noteTags} onChange={(e) => setNoteTags(e.target.value)} />
               <div>
-                <div className="mb-1 text-xs text-gray-500">Link bookmarks (optional)</div>
-                <div className="max-h-32 overflow-auto rounded-lg border bg-gray-50 p-2">
+                <div className="mb-1 text-xs text-muted-foreground">Link bookmarks (optional)</div>
+                <div className="max-h-32 overflow-auto rounded-lg border bg-muted/30 p-2">
                   <div className="grid grid-cols-1 gap-1">
                     {bookmarks.map((b) => {
                       const checked = noteLinks.includes(b.id);
                       return (
-                        <label key={b.id} className="flex items-center gap-2 text-sm">
+                        <label key={b.id} className="flex items-center gap-2 text-sm p-1 rounded-md hover:bg-background transition-colors">
                           <input
                             type="checkbox"
+                            className="shrink-0"
                             checked={checked}
                             onChange={(e) => setNoteLinks((prev) => (e.target.checked ? [...prev, b.id] : prev.filter((x) => x !== b.id)))}
                           />
@@ -362,20 +349,15 @@ export default function Page() {
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-[11px] text-gray-500">Caps: {MAX_NOTES} notes • long notes limited</p>
-                <Btn className="bg-black text-white" onClick={onAddNote}><Save className="h-4 w-4"/> Save Note</Btn>
+                <p className="text-[11px] text-muted-foreground">Caps: {MAX_NOTES} notes • long notes limited</p>
+                <Btn className="bg-primary text-primary-foreground" onClick={onAddNote}><Save className="h-4 w-4"/> Save Note</Btn>
               </div>
             </div>
           </Card>
         </div>
-      </main>
-
-      <footer className="border-t bg-gray-50">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 text-xs text-gray-600">
-          <span>© {new Date().getFullYear()} InsuranceAssist</span>
-          <span className="inline-flex items-center gap-1"><StickyNote className="h-3.5 w-3.5"/> Stable v3</span>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </AppShell>
   );
 }
+
+    
