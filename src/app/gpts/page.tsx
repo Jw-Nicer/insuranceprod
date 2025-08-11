@@ -269,12 +269,32 @@ export default function GptsPage() {
     dragOverItem.current = position;
   };
   
-  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
-    if (dragItem.current !== null && dragOverItem.current !== null) {
-      const newGpts = moveItem(filteredGpts, dragItem.current, dragOverItem.current);
-      // This is a simplified update. For a persistent global state, you'd find original indices and update `gpts`.
-      setGpts(newGpts);
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
+        setIsDragging(false);
+        return;
     }
+
+    // When not searching, filteredGpts is the same as gpts.
+    if (!searchQuery) {
+        const reorderedGpts = moveItem(gpts, dragItem.current, dragOverItem.current);
+        setGpts(reorderedGpts);
+    } else {
+        // When searching, we need to map indices from filtered list to original list.
+        const draggedItem = filteredGpts[dragItem.current];
+        const overItem = filteredGpts[dragOverItem.current];
+        
+        if (!draggedItem || !overItem) return;
+
+        const originalDraggedIndex = gpts.findIndex(g => g.name === draggedItem.name && g.url === draggedItem.url);
+        const originalOverIndex = gpts.findIndex(g => g.name === overItem.name && g.url === overItem.url);
+        
+        if (originalDraggedIndex === -1 || originalOverIndex === -1) return;
+        
+        const reorderedGpts = moveItem(gpts, originalDraggedIndex, originalOverIndex);
+        setGpts(reorderedGpts);
+    }
+    
     dragItem.current = null;
     dragOverItem.current = null;
     setIsDragging(false);
@@ -287,10 +307,13 @@ export default function GptsPage() {
   };
 
   const openEditDialog = (index: number) => {
-    const originalIndex = gpts.findIndex(g => g.name === filteredGpts[index].name);
-    setEditingIndex(originalIndex);
-    setActiveGpt(gpts[originalIndex]);
-    setIsDialogOpen(true);
+    const gptToEdit = filteredGpts[index];
+    const originalIndex = gpts.findIndex(g => g.name === gptToEdit.name && g.url === gptToEdit.url);
+    if (originalIndex !== -1) {
+      setEditingIndex(originalIndex);
+      setActiveGpt(gpts[originalIndex]);
+      setIsDialogOpen(true);
+    }
   };
 
   const handleSaveGpt = () => {
@@ -307,8 +330,11 @@ export default function GptsPage() {
   };
 
   const startDelete = (index: number) => {
-     const originalIndex = gpts.findIndex(g => g.name === filteredGpts[index].name);
-    setDeletingIndex(originalIndex);
+    const gptToDelete = filteredGpts[index];
+    const originalIndex = gpts.findIndex(g => g.name === gptToDelete.name && g.url === gptToDelete.url);
+    if (originalIndex !== -1) {
+        setDeletingIndex(originalIndex);
+    }
   }
 
   const confirmDelete = () => {
@@ -361,16 +387,16 @@ export default function GptsPage() {
                 <AnimatePresence>
                 {!mounted ? (
                   <p className="py-12 text-center text-gray-500">Loading...</p>
-                ) : filteredGpts.length > 0 ? (
+                ) : gpts.length > 0 ? (
                      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredGpts.map((gpt, index) => (
                            <motion.div
-                                key={gpt.name}
+                                key={gpt.url} // Use a more unique key like URL
                                 layout
-                                draggable={isDraggable}
+                                draggable={true}
                                 onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent<HTMLDivElement>, index)}
                                 onDragEnter={(e) => handleDragEnter(e as unknown as React.DragEvent<HTMLDivElement>, index)}
-                                onDragEnd={(e) => handleDragEnd(e as unknown as React.DragEvent<HTMLDivElement>)}
+                                onDragEnd={handleDragEnd}
                                 onDragOver={(e) => e.preventDefault()}
                                 className={`cursor-grab active:cursor-grabbing transition-opacity duration-300 ${isDragging ? 'opacity-50' : 'opacity-100'}`}
                             >
