@@ -499,7 +499,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <footer className="border-t bg-muted/20">
           <div className="mx-auto w-full max-w-7xl p-3 sm:p-4 text-xs text-muted-foreground flex items-center justify-between">
             <span>© {new Date().getFullYear()} InsuranceAssist</span>
-            <span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5"/> Built with shadcn/ui, Tailwind &amp; Framer Motion</span>
           </div>
         </footer>
       </div>
@@ -511,5 +510,3 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 export default AppShell;
-
-    
