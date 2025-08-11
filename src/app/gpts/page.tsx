@@ -109,6 +109,10 @@ const initialGpts: Gpt[] = [
   { name: "Pollution", description: "A GPT for pollution insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f3d571f48819193934e0a47eec79d-pollution-insurance-gpt", recommendedModel: "GPT-4o" },
   { name: "Primary Umbrella", description: "A GPT for primary umbrella insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f43356c84819184355c85069c3c9e-primary-umbrella-insurance-gpt", recommendedModel: "GPT-4o" },
   { name: "Loss Run", description: "A GPT for loss run analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-2", recommendedModel: "GPT-4o" },
+  { name: "GPT 4o", description: "A GPT for GPT 4o analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-3", recommendedModel: "GPT-4o" },
+  { name: "GPT 5", description: "A GPT for GPT 5 analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-4", recommendedModel: "GPT-5" },
+  { name: "GPT 5 Thinking", description: "A GPT for GPT 5 Thinking analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-5", recommendedModel: "GPT-5 Thinking" },
+  { name: "GPT 5 Pro", description: "A GPT for GPT 5 Pro analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-6", recommendedModel: "GPT-5 Pro" },
 ];
 
 const emptyGpt: Gpt = { name: "", description: "", url: "", recommendedModel: "" };
@@ -192,7 +196,7 @@ const GptCard: React.FC<{
 
   return (
     <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 relative">
-      <CardHeader>
+      <CardHeader className="flex-grow">
         <div className="flex justify-between items-start gap-4">
           <CardTitle className="text-base font-semibold">{gpt.name}</CardTitle>
           <DropdownMenu>
@@ -213,15 +217,16 @@ const GptCard: React.FC<{
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <CardDescription className="h-10 pt-1 text-xs">{gpt.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-grow space-y-4">
+        <CardDescription className="pt-1 text-xs line-clamp-2 h-9">{gpt.description}</CardDescription>
         {gpt.recommendedModel && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
             <Bot className="h-4 w-4" />
             <span>{gpt.recommendedModel}</span>
           </div>
         )}
+      </CardHeader>
+      <CardContent className="flex-grow">
+        {/* Content can be added here if needed */}
       </CardContent>
       <CardFooter>
         <Button asChild variant="outline" className="w-full">
