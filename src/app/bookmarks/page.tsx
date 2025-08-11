@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -331,7 +332,7 @@ export default function Page() {
                 <div className="mb-1 text-xs text-muted-foreground">Link bookmarks (optional)</div>
                 <div className="max-h-32 overflow-auto rounded-lg border bg-muted/30 p-2">
                   <div className="grid grid-cols-1 gap-1">
-                    {bookmarks.map((b) => {
+                    {!mounted ? <p className="text-xs text-center text-muted-foreground">Loading...</p> : bookmarks.length === 0 ? <p className="text-xs text-center text-muted-foreground">No bookmarks to link.</p> : bookmarks.map((b) => {
                       const checked = noteLinks.includes(b.id);
                       return (
                         <label key={b.id} className="flex items-center gap-2 text-sm p-1 rounded-md hover:bg-background transition-colors">
