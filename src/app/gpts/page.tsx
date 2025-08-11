@@ -42,6 +42,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardHeader,
   CardTitle,
@@ -76,7 +83,7 @@ const L = {
     description: "A short description of what it does.",
     url: "https://chatgpt.com/g/...",
     search: "Search GPTs…",
-    recommendedModel: "e.g., GPT-4o",
+    recommendedModel: "Select a model",
   },
   actions: { cancel: "Cancel", save: "Save", open: "Open GPT", edit: "Edit", delete: "Delete", copyLink: "Copy link" },
   confirmDeleteTitle: "Delete GPT?",
@@ -105,6 +112,8 @@ const initialGpts: Gpt[] = [
 ];
 
 const emptyGpt: Gpt = { name: "", description: "", url: "", recommendedModel: "" };
+
+const recommendedModels = ["GPT-4", "GPT-4o", "GPT-4 Turbo", "GPT-5", "GPT-5 Thinking", "GPT-5 Pro"];
 
 /************************************
  * GPT Dialog
@@ -140,7 +149,16 @@ const GptDialog: React.FC<{
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="recommendedModel" className="text-right">{L.fields.recommendedModel}</Label>
-          <Input id="recommendedModel" value={activeGpt.recommendedModel || ""} onChange={(e) => setActiveGpt({ ...activeGpt, recommendedModel: e.target.value })} className="col-span-3" placeholder={L.placeholders.recommendedModel} />
+          <Select value={activeGpt.recommendedModel || ""} onValueChange={(value) => setActiveGpt({ ...activeGpt, recommendedModel: value })}>
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder={L.placeholders.recommendedModel} />
+            </SelectTrigger>
+            <SelectContent>
+              {recommendedModels.map((model) => (
+                <SelectItem key={model} value={model}>{model}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <DialogFooter>
