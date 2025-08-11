@@ -65,17 +65,6 @@ interface Note {
 /************************************
  * Utils
  ************************************/
-const fmtDateTime = (iso?: string) =>
-  iso
-    ? new Date(iso).toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
-
 const toTags = (s: string) =>
   s
     .split(",")
@@ -131,6 +120,19 @@ export default function BookmarksAndNotesPage() {
 
   const { toast } = useToast();
 
+  const fmtDateTime = React.useCallback((iso?: string) =>
+    iso
+      ? new Date(iso).toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "—",
+    []
+  );
+  
   /** Derived */
   const filtered = React.useMemo(() => {
     if (!deferredQ.trim()) return bookmarks;
@@ -508,7 +510,7 @@ export default function BookmarksAndNotesPage() {
               />
               <div>
                 <div className="mb-1 text-xs text-muted-foreground">Link bookmarks (optional)</div>
-                <div className="max-h-28 overflow-y-auto rounded-md border bg-muted/30 p-2 flex flex-col gap-1">
+                <div key="bookmark-linker" className="max-h-28 overflow-y-auto rounded-md border bg-muted/30 p-2 flex flex-col gap-1">
                     {bookmarks.map((b) => {
                       const checked = noteLinks.includes(b.id);
                       return (
