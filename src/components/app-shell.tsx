@@ -293,32 +293,6 @@ const Sidebar: React.FC<{ pathname: string }> = ({ pathname }) => {
           </nav>
         </TooltipProvider>
       </ScrollArea>
-
-      {/* Gradient foot + locale hint */}
-      <div className={cn("p-3 mt-auto")}
-        style={{ background: "linear-gradient(180deg, transparent, hsl(var(--muted)/0.3))" }}
-      >
-        {!isActuallyCollapsed ? (
-          <div className="rounded-xl border bg-muted/30 p-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2 mb-1">
-              <Globe className="h-3.5 w-3.5" />
-              <span className="font-medium">Global-ready</span>
-            </div>
-            <p>Built with accessibility, RTL, and i18n in mind.</p>
-          </div>
-        ) : (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="mx-auto w-9 h-9 rounded-lg border bg-muted/30 grid place-items-center">
-                  <Globe className="h-4 w-4" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">Global-ready</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
     </aside>
   );
 };
