@@ -14,7 +14,15 @@ export function Logo({ className }: { className?: string }) {
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="24"
+        strokeWidth="16"
+      />
+      <path
+        d="M164.4,120a32,32,0,0,1-52.8,22.4L104,134.4a32,32,0,0,1-52.8-22.4,32,32,0,0,1,64-22.4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="16"
       />
     </svg>
   );
