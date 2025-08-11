@@ -29,3 +29,25 @@ export interface Gpt {
   description: string;
   url: string;
 }
+
+export interface Bookmark {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  tags: string[];
+  folder?: string;
+  favorite?: boolean;
+  expiresAt?: string; // YYYY-MM-DD
+  lastChecked?: string; // ISO date
+}
+
+export interface Note {
+  id: string;
+  content: string;
+  createdAt: string;
+  tags?: string[];
+  linkedBookmarkIds?: string[];
+}
+
+    

@@ -23,6 +23,7 @@ import {
   Sparkles,
   Globe,
   CircleDot,
+  Bookmark as BookmarkIcon,
 } from "lucide-react";
 import { Command as CommandIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -69,6 +70,7 @@ export const navigation: NavGroup[] = [
     title: "Tools",
     items: [
       { href: "/loss-run", label: "Loss Run", icon: FileText, isLive: true },
+      { href: "/bookmarks", label: "Bookmarks & Notes", icon: BookmarkIcon, isLive: true },
       { href: "/viability-assessment", label: "Viability Assessment", icon: ShieldCheck },
       { href: "/insurance-calculator", label: "Insurance Calculator", icon: Calculator },
       { href: "/gpts", label: "GPT Collection", icon: BotMessageSquare, isLive: true },
