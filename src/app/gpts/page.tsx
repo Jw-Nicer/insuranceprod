@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Copy as CopyIcon,
   GripVertical,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,12 +70,13 @@ const L = {
   addNew: "Add New GPT",
   updateDetails: "Update the details for this GPT.",
   enterDetails: "Enter details for the new GPT you want to add.",
-  fields: { name: "Name", description: "Description", url: "URL" },
+  fields: { name: "Name", description: "Description", url: "URL", recommendedModel: "Recommended Model" },
   placeholders: {
     name: "e.g. Content Summarizer",
     description: "A short description of what it does.",
     url: "https://chatgpt.com/g/...",
     search: "Search GPTs…",
+    recommendedModel: "e.g., GPT-4o",
   },
   actions: { cancel: "Cancel", save: "Save", open: "Open GPT", edit: "Edit", delete: "Delete", copyLink: "Copy link" },
   confirmDeleteTitle: "Delete GPT?",
@@ -89,20 +91,20 @@ const L = {
  * Seed data
  ************************************/
 const initialGpts: Gpt[] = [
-  { name: "Property", description: "A GPT for property insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f3ba9bf488191888ac2594e45142f-property-insurance-gpt" },
-  { name: "Auto", description: "A GPT for auto insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e083b87088191a91d83422ea615c0-auto-insurance-gpt" },
-  { name: "General Liability", description: "A GPT for general liability insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f1d81d58c81919f8d51c4b73337b7-general-liability-insurance-gpt" },
-  { name: "Active Assailant", description: "A GPT for active assailant insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e0a3774b48191801fd626744b7ef3-active-assailant-insurance-gpt" },
-  { name: "Cyber", description: "A GPT for cyber insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e02726ee4819188dbb126c478652b-cyber-insurance-gpt" },
-  { name: "Marine", description: "A GPT for marine insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e05b24304819182cdf66796b10461-marine-insurance-gpt" },
-  { name: "Fine Arts", description: "A GPT for fine arts insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682dfb6cf5c0819191ca8a0d3fb0d1a0-fine-arts-insurance-gpt" },
-  { name: "Kidnap and Ransom", description: "A GPT for kidnap and ransom insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e024298508191ab2ce9f6b30e33fa-kidnap-and-ransom-insurance-gpt" },
-  { name: "Pollution", description: "A GPT for pollution insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f3d571f48819193934e0a47eec79d-pollution-insurance-gpt" },
-  { name: "Primary Umbrella", description: "A GPT for primary umbrella insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f43356c84819184355c85069c3c9e-primary-umbrella-insurance-gpt" },
-  { name: "Loss Run", description: "A GPT for loss run analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-2" },
+  { name: "Property", description: "A GPT for property insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f3ba9bf488191888ac2594e45142f-property-insurance-gpt", recommendedModel: "GPT-4o" },
+  { name: "Auto", description: "A GPT for auto insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e083b87088191a91d83422ea615c0-auto-insurance-gpt", recommendedModel: "GPT-4" },
+  { name: "General Liability", description: "A GPT for general liability insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f1d81d58c81919f8d51c4b73337b7-general-liability-insurance-gpt", recommendedModel: "GPT-4" },
+  { name: "Active Assailant", description: "A GPT for active assailant insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e0a3774b48191801fd626744b7ef3-active-assailant-insurance-gpt", recommendedModel: "GPT-4 Turbo" },
+  { name: "Cyber", description: "A GPT for cyber insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e02726ee4819188dbb126c478652b-cyber-insurance-gpt", recommendedModel: "GPT-4o" },
+  { name: "Marine", description: "A GPT for marine insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e05b24304819182cdf66796b10461-marine-insurance-gpt", recommendedModel: "GPT-4" },
+  { name: "Fine Arts", description: "A GPT for fine arts insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682dfb6cf5c0819191ca8a0d3fb0d1a0-fine-arts-insurance-gpt", recommendedModel: "GPT-4" },
+  { name: "Kidnap and Ransom", description: "A GPT for kidnap and ransom insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682e024298508191ab2ce9f6b30e33fa-kidnap-and-ransom-insurance-gpt", recommendedModel: "GPT-4 Turbo" },
+  { name: "Pollution", description: "A GPT for pollution insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f3d571f48819193934e0a47eec79d-pollution-insurance-gpt", recommendedModel: "GPT-4" },
+  { name: "Primary Umbrella", description: "A GPT for primary umbrella insurance. Trained on Hartford data.", url: "https://chatgpt.com/g/g-682f43356c84819184355c85069c3c9e-primary-umbrella-insurance-gpt", recommendedModel: "GPT-4" },
+  { name: "Loss Run", description: "A GPT for loss run analysis. Trained on Hartford data.", url: "https://chatgpt.com/g/g-6865748e576081918fd4ac06b21696fd-loss-run-analyzer-2", recommendedModel: "GPT-4o" },
 ];
 
-const emptyGpt: Gpt = { name: "", description: "", url: "" };
+const emptyGpt: Gpt = { name: "", description: "", url: "", recommendedModel: "" };
 
 /************************************
  * GPT Dialog
@@ -135,6 +137,10 @@ const GptDialog: React.FC<{
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="url" className="text-right">{L.fields.url}</Label>
           <Input id="url" value={activeGpt.url} onChange={(e) => setActiveGpt({ ...activeGpt, url: e.target.value })} className="col-span-3" placeholder={L.placeholders.url} />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="recommendedModel" className="text-right">{L.fields.recommendedModel}</Label>
+          <Input id="recommendedModel" value={activeGpt.recommendedModel || ""} onChange={(e) => setActiveGpt({ ...activeGpt, recommendedModel: e.target.value })} className="col-span-3" placeholder={L.placeholders.recommendedModel} />
         </div>
       </div>
       <DialogFooter>
@@ -196,11 +202,17 @@ const GptCard: React.FC<{
         </div>
         <CardDescription className="h-10 pt-1 text-xs">{gpt.description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow">
+      <CardContent className="flex-grow space-y-4">
         <div className="flex gap-2">
           <Badge variant="outline">{L.badges.curated}</Badge>
           <Badge variant="outline">{L.badges.external}</Badge>
         </div>
+        {gpt.recommendedModel && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Bot className="h-4 w-4" />
+            <span>{gpt.recommendedModel}</span>
+          </div>
+        )}
       </CardContent>
       <CardFooter>
         <Button asChild variant="outline" className="w-full">
@@ -257,7 +269,8 @@ export default function GptsPage() {
   
   const filteredGpts = React.useMemo(() => gpts.filter(gpt =>
     gpt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    gpt.description.toLowerCase().includes(searchQuery.toLowerCase())
+    gpt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (gpt.recommendedModel || "").toLowerCase().includes(searchQuery.toLowerCase())
   ), [gpts, searchQuery]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
@@ -275,12 +288,10 @@ export default function GptsPage() {
         return;
     }
 
-    // When not searching, filteredGpts is the same as gpts.
     if (!searchQuery) {
         const reorderedGpts = moveItem(gpts, dragItem.current, dragOverItem.current);
         setGpts(reorderedGpts);
     } else {
-        // When searching, we need to map indices from filtered list to original list.
         const draggedItem = filteredGpts[dragItem.current];
         const overItem = filteredGpts[dragOverItem.current];
         
@@ -391,9 +402,9 @@ export default function GptsPage() {
                      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredGpts.map((gpt, index) => (
                            <motion.div
-                                key={gpt.url} // Use a more unique key like URL
+                                key={gpt.url}
                                 layout
-                                draggable={true}
+                                draggable={isDraggable}
                                 onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent<HTMLDivElement>, index)}
                                 onDragEnter={(e) => handleDragEnter(e as unknown as React.DragEvent<HTMLDivElement>, index)}
                                 onDragEnd={handleDragEnd}

@@ -28,6 +28,7 @@ export interface Gpt {
   name: string;
   description: string;
   url: string;
+  recommendedModel?: string;
 }
 
 export interface Bookmark {
@@ -49,5 +50,3 @@ export interface Note {
   tags?: string[];
   linkedBookmarkIds?: string[];
 }
-
-    
