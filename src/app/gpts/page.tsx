@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   PlusCircle,
   ArrowUpRight,
@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   ExternalLink,
   Copy as CopyIcon,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -152,7 +153,8 @@ const GptCard: React.FC<{
   index: number;
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
-}> = ({ gpt, index, onEdit, onDelete }) => {
+  isDraggable: boolean;
+}> = ({ gpt, index, onEdit, onDelete, isDraggable }) => {
   const { toast } = useToast();
 
   const copyUrl = async () => {
@@ -236,10 +238,17 @@ export default function GptsPage() {
     setMounted(true);
   }, []);
   
-  const filteredGpts = gpts.filter(gpt =>
+  const filteredGpts = React.useMemo(() => gpts.filter(gpt =>
     gpt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     gpt.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ), [gpts, searchQuery]);
+
+  const setFilteredGpts = (reorderedGpts: Gpt[]) => {
+    // Only allow reordering if search is not active
+    if (!searchQuery) {
+        setGpts(reorderedGpts);
+    }
+  }
 
   const openAddDialog = () => {
     setEditingIndex(null);
@@ -278,6 +287,8 @@ export default function GptsPage() {
       setDeletingIndex(null);
     }
   };
+
+  const isDraggable = !searchQuery;
 
   return (
     <AppShell>
@@ -321,19 +332,27 @@ export default function GptsPage() {
                 {!mounted ? (
                   <p className="py-12 text-center text-gray-500">Loading...</p>
                 ) : filteredGpts.length > 0 ? (
-                    <motion.div 
-                        layout 
+                    <Reorder.Group
+                        axis="y"
+                        as="div"
+                        values={filteredGpts}
+                        onReorder={setFilteredGpts}
                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
                     >
+                    <AnimatePresence>
                     {filteredGpts.map((gpt, index) => (
-                        <motion.div layout key={gpt.name}>
-                            <GptCard gpt={gpt} index={index} onEdit={openEditDialog} onDelete={startDelete} />
-                        </motion.div>
+                        <Reorder.Item 
+                            as="div" 
+                            key={gpt.name} 
+                            value={gpt}
+                            dragListener={isDraggable}
+                            className={isDraggable ? 'cursor-grab' : ''}
+                        >
+                            <GptCard gpt={gpt} index={index} onEdit={openEditDialog} onDelete={startDelete} isDraggable={isDraggable} />
+                        </Reorder.Item>
                     ))}
-                    </motion.div>
+                    </AnimatePresence>
+                    </Reorder.Group>
                 ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <EmptyState onAdd={openAddDialog} />
@@ -368,5 +387,3 @@ export default function GptsPage() {
     </AppShell>
   );
 }
-
-    
