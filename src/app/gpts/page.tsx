@@ -221,10 +221,6 @@ const GptCard: React.FC<{
         <CardDescription className="h-10 pt-1 text-xs">{gpt.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
-        <div className="flex gap-2">
-          <Badge variant="outline">{L.badges.curated}</Badge>
-          <Badge variant="outline">{L.badges.external}</Badge>
-        </div>
         {gpt.recommendedModel && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Bot className="h-4 w-4" />
