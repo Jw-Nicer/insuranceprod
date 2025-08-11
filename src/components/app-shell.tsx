@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -482,25 +483,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [openCommand, setOpenCommand] = React.useState(false);
 
   return (
-    <div className="flex min-h-screen w-full" data-testid="app-shell">
+    <div className="flex h-screen w-full" data-testid="app-shell">
       {/* Desktop sidebar */}
       <Sidebar pathname={pathname} />
 
-      {/* Main */}
-      <div className="flex flex-1 flex-col">
+      {/* Main content area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar onOpenCommand={() => setOpenCommand(true)} />
 
         {/* Page container */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        <div className="flex-1 overflow-auto">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
 
-        {/* Footer */}
-        <footer className="border-t bg-muted/20">
-          <div className="mx-auto w-full max-w-7xl p-3 sm:p-4 text-xs text-muted-foreground flex items-center justify-between">
-            <span>© {new Date().getFullYear()} InsuranceAssist</span>
-          </div>
-        </footer>
+          {/* Footer */}
+          <footer className="border-t bg-muted/20">
+            <div className="mx-auto w-full max-w-7xl p-3 sm:p-4 text-xs text-muted-foreground flex items-center justify-between">
+              <span>© {new Date().getFullYear()} InsuranceAssist</span>
+            </div>
+          </footer>
+        </div>
       </div>
 
       {/* Command Palette */}
@@ -510,3 +513,5 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 export default AppShell;
+
+    
