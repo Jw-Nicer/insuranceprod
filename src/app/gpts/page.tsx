@@ -246,8 +246,10 @@ export default function GptsPage() {
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
   const [deletingIndex, setDeletingIndex] = React.useState<number | null>(null);
   const [mounted, setMounted] = React.useState(false);
-  const gridRef = React.useRef(null);
-
+  const [isDragging, setIsDragging] = React.useState(false);
+  
+  const dragItem = React.useRef<number | null>(null);
+  const dragOverItem = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
@@ -258,11 +260,25 @@ export default function GptsPage() {
     gpt.description.toLowerCase().includes(searchQuery.toLowerCase())
   ), [gpts, searchQuery]);
 
-  const handleReorder = (from: number, to: number) => {
-    if (searchQuery) return; // Don't reorder when searching
-    setGpts(moveItem(gpts, from, to));
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    dragItem.current = position;
+    setIsDragging(true);
   };
 
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    dragOverItem.current = position;
+  };
+  
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    if (dragItem.current !== null && dragOverItem.current !== null) {
+      const newGpts = moveItem(filteredGpts, dragItem.current, dragOverItem.current);
+      // This is a simplified update. For a persistent global state, you'd find original indices and update `gpts`.
+      setGpts(newGpts);
+    }
+    dragItem.current = null;
+    dragOverItem.current = null;
+    setIsDragging(false);
+  };
 
   const openAddDialog = () => {
     setEditingIndex(null);
@@ -346,14 +362,17 @@ export default function GptsPage() {
                 {!mounted ? (
                   <p className="py-12 text-center text-gray-500">Loading...</p>
                 ) : filteredGpts.length > 0 ? (
-                     <motion.div ref={gridRef} layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredGpts.map((gpt, index) => (
                            <motion.div
                                 key={gpt.name}
                                 layout
-                                drag={isDraggable}
-                                dragConstraints={gridRef}
-                                dragSnapToOrigin
+                                draggable={isDraggable}
+                                onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent<HTMLDivElement>, index)}
+                                onDragEnter={(e) => handleDragEnter(e as unknown as React.DragEvent<HTMLDivElement>, index)}
+                                onDragEnd={(e) => handleDragEnd(e as unknown as React.DragEvent<HTMLDivElement>)}
+                                onDragOver={(e) => e.preventDefault()}
+                                className={`cursor-grab active:cursor-grabbing transition-opacity duration-300 ${isDragging ? 'opacity-50' : 'opacity-100'}`}
                             >
                                 <GptCard gpt={gpt} index={index} onEdit={openEditDialog} onDelete={startDelete} isDraggable={isDraggable} />
                            </motion.div>
