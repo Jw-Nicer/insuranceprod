@@ -400,7 +400,7 @@ export default function GptsPage() {
                     <Input placeholder={L.placeholders.search} className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                 </div>
                 <div className="text-sm text-muted-foreground pr-2">
-                    {L.count(filteredGpts.length)}
+                    {mounted && L.count(filteredGpts.length)}
                 </div>
             </div>
 
