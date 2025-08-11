@@ -167,8 +167,13 @@ const GptCard: React.FC<{
   };
 
   return (
-    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300">
-      <CardHeader>
+    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 relative">
+        {isDraggable && (
+          <div className="absolute top-2 left-2 cursor-grab active:cursor-grabbing text-muted-foreground/50">
+            <GripVertical className="h-5 w-5" />
+          </div>
+        )}
+      <CardHeader className="pt-8">
         <div className="flex justify-between items-start gap-4">
           <CardTitle className="text-base font-semibold">{gpt.name}</CardTitle>
           <DropdownMenu>
@@ -241,10 +246,7 @@ export default function GptsPage() {
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
   const [deletingIndex, setDeletingIndex] = React.useState<number | null>(null);
   const [mounted, setMounted] = React.useState(false);
-
-  // For drag-and-drop
-  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
-  const dragTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const gridRef = React.useRef(null);
 
 
   React.useEffect(() => {
@@ -344,41 +346,14 @@ export default function GptsPage() {
                 {!mounted ? (
                   <p className="py-12 text-center text-gray-500">Loading...</p>
                 ) : filteredGpts.length > 0 ? (
-                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                     <motion.div ref={gridRef} layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredGpts.map((gpt, index) => (
                            <motion.div
-                            key={gpt.name}
-                            layout
-                            drag={isDraggable}
-                            onDragStart={() => setDraggedIndex(index)}
-                            onDragEnd={() => {
-                                if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
-                                setDraggedIndex(null);
-                            }}
-                            onDrag={(_event, info) => {
-                                if (isDraggable && draggedIndex !== null) {
-                                    if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
-                                    dragTimeoutRef.current = setTimeout(() => {
-                                        const grid = document.querySelector(".grid");
-                                        if (!grid) return;
-                                        
-                                        const gridCols = window.getComputedStyle(grid).gridTemplateColumns.split(" ").length;
-                                        const cardWidth = grid.children[0]?.clientWidth || 200;
-                                        const cardHeight = grid.children[0]?.clientHeight || 200;
-                                        
-                                        const colOffset = Math.round(info.offset.x / cardWidth);
-                                        const rowOffset = Math.round(info.offset.y / cardHeight);
-                                        
-                                        const newIndex = index + colOffset + (rowOffset * gridCols);
-                                        
-                                        if (newIndex !== draggedIndex && newIndex >= 0 && newIndex < gpts.length) {
-                                            handleReorder(draggedIndex, newIndex);
-                                            setDraggedIndex(newIndex);
-                                        }
-                                    }, 100);
-                                }
-                            }}
-                            className={isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}
+                                key={gpt.name}
+                                layout
+                                drag={isDraggable}
+                                dragConstraints={gridRef}
+                                dragSnapToOrigin
                             >
                                 <GptCard gpt={gpt} index={index} onEdit={openEditDialog} onDelete={startDelete} isDraggable={isDraggable} />
                            </motion.div>
