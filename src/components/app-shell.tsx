@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -46,7 +45,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ElementType;
-  isLive?: boolean;
+  status?: 'live' | 'dev' | 'soon';
 }
 
 interface NavGroup {
@@ -61,27 +60,27 @@ export const navigation: NavGroup[] = [
   {
     title: "Analysis",
     items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard, isLive: true },
-      { href: "/benchmarking", label: "Benchmarking", icon: Scale },
-      { href: "/analytics", label: "Analytics", icon: BarChart2 },
+      { href: "/", label: "Dashboard", icon: LayoutDashboard, status: 'live' },
+      { href: "/benchmarking", label: "Benchmarking", icon: Scale, status: 'soon' },
+      { href: "/analytics", label: "Analytics", icon: BarChart2, status: 'soon' },
     ],
   },
   {
     title: "Tools",
     items: [
-      { href: "/loss-run", label: "Loss Run", icon: FileText, isLive: true },
-      { href: "/bookmarks", label: "Bookmarks & Notes", icon: BookmarkIcon, isLive: true },
-      { href: "/viability-assessment", label: "Viability Assessment", icon: ShieldCheck },
-      { href: "/insurance-calculator", label: "Insurance Calculator", icon: Calculator },
-      { href: "/gpts", label: "GPT Collection", icon: BotMessageSquare, isLive: true },
-      { href: "/professional-liability", label: "Professional Liability", icon: LifeBuoy },
-      { href: "/health-insurance", label: "Health Insurance", icon: HeartPulse },
+      { href: "/loss-run", label: "Loss Run", icon: FileText, status: 'dev' },
+      { href: "/bookmarks", label: "Bookmarks & Notes", icon: BookmarkIcon, status: 'dev' },
+      { href: "/viability-assessment", label: "Viability Assessment", icon: ShieldCheck, status: 'soon' },
+      { href: "/insurance-calculator", label: "Insurance Calculator", icon: Calculator, status: 'soon' },
+      { href: "/gpts", label: "GPT Collection", icon: BotMessageSquare, status: 'live' },
+      { href: "/professional-liability", label: "Professional Liability", icon: LifeBuoy, status: 'soon' },
+      { href: "/health-insurance", label: "Health Insurance", icon: HeartPulse, status: 'soon' },
     ],
   },
   {
     title: "Insurance News",
     items: [
-      { href: "/insurance-news", label: "Latest News", icon: Newspaper, isLive: true },
+      { href: "/insurance-news", label: "Latest News", icon: Newspaper, status: 'live' },
     ],
   },
 ];
@@ -99,6 +98,8 @@ function isActive(pathname: string, href: string) {
  ************************************/
 const NavLink: React.FC<{ item: NavItem; pathname: string; collapsed?: boolean }> = ({ item, pathname, collapsed }) => {
   const active = isActive(pathname, item.href);
+  const isEnabled = item.status === 'live' || item.status === 'dev';
+
   const content = (
     <Button
       variant={active ? "secondary" : "ghost"}
@@ -106,7 +107,7 @@ const NavLink: React.FC<{ item: NavItem; pathname: string; collapsed?: boolean }
         "w-full justify-start gap-3 group transition-all",
         collapsed ? "px-2" : "px-3"
       )}
-      disabled={!item.isLive}
+      disabled={!isEnabled}
       aria-current={active ? "page" : undefined}
       aria-label={item.label}
     >
@@ -134,19 +135,17 @@ const NavLink: React.FC<{ item: NavItem; pathname: string; collapsed?: boolean }
         </span>
       )}
 
-      {!collapsed && (
+      {!collapsed && item.status && (
         <span className="ml-auto" aria-hidden>
-          {item.isLive ? (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 rounded-full">Live</Badge>
-          ) : (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 rounded-full">Soon</Badge>
-          )}
+          {item.status === 'live' && <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 rounded-full">Live</Badge>}
+          {item.status === 'dev' && <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 rounded-full border-yellow-500/50 text-yellow-600 bg-yellow-500/10">Under Development</Badge>}
+          {item.status === 'soon' && <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 rounded-full">Soon</Badge>}
         </span>
       )}
     </Button>
   );
 
-  if (!item.isLive) {
+  if (!isEnabled) {
     const disabledNode = (
       <div className="cursor-not-allowed" title="Coming soon" aria-disabled>
         {content}
@@ -459,7 +458,7 @@ const CommandPalette: React.FC<{ open: boolean; setOpen: (v: boolean) => void; p
         {navigation.map((group) => (
           <CommandGroup key={group.title} heading={group.title}>
             {group.items.map((item) => (
-              <CommandItem key={item.href} disabled={!item.isLive} onSelect={() => {
+              <CommandItem key={item.href} disabled={!(item.status === 'live' || item.status === 'dev')} onSelect={() => {
                 window.location.href = item.href;
                 setOpen(false);
               }}>
@@ -500,7 +499,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <footer className="border-t bg-muted/20">
           <div className="mx-auto w-full max-w-7xl p-3 sm:p-4 text-xs text-muted-foreground flex items-center justify-between">
             <span>© {new Date().getFullYear()} InsuranceAssist</span>
-            <span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5"/> Built with shadcn/ui, Tailwind & Framer Motion</span>
+            <span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5"/> Built with shadcn/ui, Tailwind &amp; Framer Motion</span>
           </div>
         </footer>
       </div>
