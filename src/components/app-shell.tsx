@@ -60,7 +60,7 @@ export const navigation: NavGroup[] = [
   {
     title: "Analysis",
     items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard, status: 'live' },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, status: 'live' },
       { href: "/benchmarking", label: "Benchmarking", icon: Scale, status: 'soon' },
       { href: "/analytics", label: "Analytics", icon: BarChart2, status: 'soon' },
     ],
@@ -80,7 +80,7 @@ export const navigation: NavGroup[] = [
   {
     title: "Insurance News",
     items: [
-      { href: "/insurance-news", label: "Latest News", icon: Newspaper, status: 'live' },
+      { href: "/", label: "Latest News", icon: Newspaper, status: 'live' },
     ],
   },
 ];
@@ -482,7 +482,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [openCommand, setOpenCommand] = React.useState(false);
 
   return (
-    <div className="flex min-h-screen w-full" data-testid="app-shell">
+    <div className="flex w-full" data-testid="app-shell">
       {/* Desktop sidebar */}
       <Sidebar pathname={pathname} />
 
