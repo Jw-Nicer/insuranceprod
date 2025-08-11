@@ -244,6 +244,8 @@ export default function GptsPage() {
 
   // For drag-and-drop
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+  const dragTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
 
   React.useEffect(() => {
     setMounted(true);
@@ -349,15 +351,32 @@ export default function GptsPage() {
                             layout
                             drag={isDraggable}
                             onDragStart={() => setDraggedIndex(index)}
-                            onDragEnd={() => setDraggedIndex(null)}
-                            onViewportBoxUpdate={(_viewportBox, delta) => {
-                              if (isDraggable && draggedIndex !== null) {
-                                  const newIndex = index + Math.round(delta.x.translate / 200) + Math.round(delta.y.translate / 200) * 4;
-                                  if (newIndex !== draggedIndex && newIndex >= 0 && newIndex < gpts.length) {
-                                      handleReorder(draggedIndex, newIndex);
-                                      setDraggedIndex(newIndex);
-                                  }
-                              }
+                            onDragEnd={() => {
+                                if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+                                setDraggedIndex(null);
+                            }}
+                            onDrag={(_event, info) => {
+                                if (isDraggable && draggedIndex !== null) {
+                                    if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+                                    dragTimeoutRef.current = setTimeout(() => {
+                                        const grid = document.querySelector(".grid");
+                                        if (!grid) return;
+                                        
+                                        const gridCols = window.getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+                                        const cardWidth = grid.children[0]?.clientWidth || 200;
+                                        const cardHeight = grid.children[0]?.clientHeight || 200;
+                                        
+                                        const colOffset = Math.round(info.offset.x / cardWidth);
+                                        const rowOffset = Math.round(info.offset.y / cardHeight);
+                                        
+                                        const newIndex = index + colOffset + (rowOffset * gridCols);
+                                        
+                                        if (newIndex !== draggedIndex && newIndex >= 0 && newIndex < gpts.length) {
+                                            handleReorder(draggedIndex, newIndex);
+                                            setDraggedIndex(newIndex);
+                                        }
+                                    }, 100);
+                                }
                             }}
                             className={isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}
                             >
@@ -399,5 +418,3 @@ export default function GptsPage() {
     </AppShell>
   );
 }
-
-    
