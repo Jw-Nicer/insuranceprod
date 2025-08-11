@@ -69,7 +69,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-        <div className="mx-auto w-full max-w-[1200px] p-4 sm:p-6">
+        <div className="mx-auto w-full max-w-[1200px]">
         {!claims ? (
           <FileUploader
             onFileProcess={handleFileProcess}

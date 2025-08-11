@@ -482,7 +482,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [openCommand, setOpenCommand] = React.useState(false);
 
   return (
-    <div className="flex w-full" data-testid="app-shell">
+    <div className="flex min-h-screen w-full" data-testid="app-shell">
       {/* Desktop sidebar */}
       <Sidebar pathname={pathname} />
 

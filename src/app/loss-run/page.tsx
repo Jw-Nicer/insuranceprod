@@ -190,9 +190,6 @@ export default function LossRunPage() {
     <AppShell>
       {!premiumHistory ? (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold tracking-tight">Loss Run Analysis</h1>
-          </div>
           <LossRunInstructions />
           <div className="mt-8">
             <Card>

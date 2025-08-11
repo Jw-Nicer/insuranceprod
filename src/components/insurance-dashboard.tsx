@@ -57,9 +57,9 @@ export default function InsuranceDashboard({ claims, analysis, onAnalyze, isLoad
   const claimKeys = claims.length > 0 ? Object.keys(claims[0]) : [];
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex items-center justify-between h-16 px-4 border-b bg-background/80 backdrop-blur-sm sm:px-6">
-        <h1 className="text-xl font-semibold text-primary font-headline flex items-center gap-2">
+    <div className="flex flex-col min-h-screen">
+      <div className="flex items-center justify-between h-16 px-4 border-b shrink-0 sm:px-6">
+        <h1 className="text-xl font-semibold flex items-center gap-2">
             <FileText />
             Insurance Claims Dashboard
         </h1>
@@ -67,8 +67,8 @@ export default function InsuranceDashboard({ claims, analysis, onAnalyze, isLoad
           <FileUp className="mr-2 h-4 w-4" />
           Upload New File
         </Button>
-      </header>
-      <main className="flex-1 p-4 sm:p-6 md:p-8">
+      </div>
+      <main className="flex-1 p-4 sm:p-6 md:p-8 bg-muted/50">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
