@@ -134,3 +134,9 @@ a, p, h1, h2, h3, h4, h5, h6, span, small, strong, em, code {
 
 /* 9) Optional helper to force-hide any accidental x-overflow on a section */
 .no-x-scroll { overflow-x: hidden !important; }
+
+/* 10) Dashboard hero animations */
+@keyframes pulse-slow { 0%, 100% { opacity: .8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes pulse-slower { 0%, 100% { opacity: .6; transform: scale(1); } 50% { opacity: .9; transform: scale(1.08); } }
+.animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
+.animate-pulse-slower { animation: pulse-slower 12s ease-in-out infinite; }

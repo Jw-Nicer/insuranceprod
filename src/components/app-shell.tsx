@@ -139,7 +139,7 @@ const NavLink: React.FC<{ item: NavItem; pathname: string; collapsed?: boolean }
       {!collapsed && item.status && (
         <span className="ml-auto" aria-hidden>
           {item.status === 'live' && <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 rounded-full">Live</Badge>}
-          {item.status === 'dev' && <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 rounded-full border-yellow-500/50 text-yellow-600 bg-yellow-500/10">Under Development</Badge>}
+          {item.status === 'dev' && <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 rounded-full border-yellow-500/50 text-yellow-600 bg-yellow-500/10">Dev</Badge>}
           {item.status === 'soon' && <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 rounded-full">Soon</Badge>}
         </span>
       )}
