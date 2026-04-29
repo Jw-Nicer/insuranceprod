@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export type KpiTrend = "up" | "down" | "flat";
@@ -171,4 +172,20 @@ export function KpiCard({
     );
   }
   return Inner;
+}
+
+export function KpiCardSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("h-full rounded-2xl border bg-card p-4 shadow-sm", className)}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-7 w-7 rounded-md" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+        <Skeleton className="h-4 w-12 rounded-full" />
+      </div>
+      <Skeleton className="mt-3 h-8 w-20" />
+      <Skeleton className="mt-3 h-12 w-full" />
+    </div>
+  );
 }

@@ -27,74 +27,16 @@ import {
   Target,
   Bell,
 } from "lucide-react";
-import { KpiCard } from "@/components/dashboard/kpi-card";
+import { KpiCard, KpiCardSkeleton } from "@/components/dashboard/kpi-card";
 import { ActivityFeed, type ActivityItem } from "@/components/dashboard/activity-feed";
 import { TrendInsightCard, DonutInsightCard } from "@/components/dashboard/insight-card";
+import { DashboardProvider, useDashboard } from "@/components/dashboard/dashboard-context";
+import { DateRangePicker } from "@/components/dashboard/date-range-picker";
+import { getDashboardData } from "@/components/dashboard/dashboard-data";
 
 const Kbd = ({ children }: { children: React.ReactNode }) => (
   <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">{children}</kbd>
 );
-
-/* -------------------------------------------------------- */
-/* Mock data – replace with Firestore / API later           */
-/* -------------------------------------------------------- */
-const KPI_DATA = [
-  {
-    label: "Open Quotes",
-    value: 12,
-    delta: 14.3,
-    icon: Sparkles,
-    accent: "primary" as const,
-    href: "/quotes?status=open",
-    series: [4, 6, 5, 8, 7, 9, 12],
-  },
-  {
-    label: "Expiring Policies",
-    value: 7,
-    delta: -8.2,
-    positiveIsGood: false,
-    icon: CalendarDays,
-    accent: "amber" as const,
-    href: "/policies?expiring=30d",
-    series: [10, 9, 8, 9, 8, 7, 7],
-  },
-  {
-    label: "Benchmarks Run",
-    value: 31,
-    delta: 22.7,
-    icon: TrendingUp,
-    accent: "violet" as const,
-    href: "/benchmarks",
-    series: [12, 15, 18, 22, 25, 28, 31],
-  },
-  {
-    label: "Avg. Response Time",
-    value: 1.2,
-    suffix: "h",
-    delta: -11.5,
-    positiveIsGood: false,
-    icon: Clock,
-    accent: "emerald" as const,
-    series: [2.1, 1.9, 1.8, 1.6, 1.5, 1.3, 1.2],
-  },
-];
-
-const RENEWAL_TREND = [
-  { month: "Nov", renewals: 18 },
-  { month: "Dec", renewals: 22 },
-  { month: "Jan", renewals: 19 },
-  { month: "Feb", renewals: 26 },
-  { month: "Mar", renewals: 31 },
-  { month: "Apr", renewals: 38 },
-];
-
-const CLAIM_MIX = [
-  { type: "Property", count: 42 },
-  { type: "Auto", count: 31 },
-  { type: "Liability", count: 18 },
-  { type: "Workers' Comp", count: 12 },
-  { type: "Other", count: 6 },
-];
 
 const ACTIVITY: ActivityItem[] = [
   { id: "1", kind: "quote", title: "New quote drafted for Acme Corp", description: "GL + Property bundle, $2.4M TIV", timestamp: new Date(Date.now() - 1000 * 60 * 18), actor: "Paula" },
@@ -132,13 +74,14 @@ const PageHero = () => (
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex items-center gap-2 rounded-xl border bg-background/80 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
+        <DateRangePicker />
+        <div className="hidden items-center gap-2 rounded-xl border bg-background/80 px-3 py-2 text-xs text-muted-foreground backdrop-blur lg:inline-flex">
           <Globe2 className="h-3.5 w-3.5" />
           Global-ready · i18n / RTL
         </div>
         <Button asChild size="sm" variant="outline">
           <Link href="/settings">
-            Quick settings <ChevronRight className="ml-1 h-4 w-4" />
+            Settings <ChevronRight className="ml-1 h-4 w-4" />
           </Link>
         </Button>
         <Button size="sm">
@@ -191,10 +134,7 @@ const QuickLinkCard = ({
   </Card>
 );
 
-/* -------------------------------------------------------- */
-/* Search bar                                                */
-/* -------------------------------------------------------- */
-const GlobalSearch = ({ onFocusCmd }: { onFocusCmd: () => void }) => {
+const GlobalSearch = () => {
   const [q, setQ] = React.useState("");
   return (
     <div className="relative">
@@ -202,7 +142,6 @@ const GlobalSearch = ({ onFocusCmd }: { onFocusCmd: () => void }) => {
       <Input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        onFocus={onFocusCmd}
         placeholder="Search tools, pages, news…"
         className="pl-8 pr-14"
         aria-label="Global search"
@@ -212,9 +151,6 @@ const GlobalSearch = ({ onFocusCmd }: { onFocusCmd: () => void }) => {
   );
 };
 
-/* -------------------------------------------------------- */
-/* Alerts strip                                              */
-/* -------------------------------------------------------- */
 const AlertsStrip = () => (
   <Card className="border-amber-500/30 bg-amber-500/5">
     <div className="flex items-start gap-3 p-4">
@@ -241,186 +177,251 @@ const AlertsStrip = () => (
 );
 
 /* -------------------------------------------------------- */
+/* KPI + insights, range-aware                               */
+/* -------------------------------------------------------- */
+const KpiSection = () => {
+  const { range, isLoading } = useDashboard();
+  const data = React.useMemo(() => getDashboardData(range), [range]);
+
+  return (
+    <section aria-label="Key performance indicators">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">At a glance</h2>
+          <p className="text-xs text-muted-foreground">For {data.rangeLabel}, vs. previous period</p>
+        </div>
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
+          <Target className="mr-1 h-3.5 w-3.5" /> Set goals
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => <KpiCardSkeleton key={i} />)
+        ) : (
+          <>
+            <KpiCard
+              label="Open Quotes"
+              value={data.openQuotes.value}
+              delta={data.openQuotes.delta}
+              series={data.openQuotes.series}
+              icon={Sparkles}
+              accent="primary"
+              href="/quotes?status=open"
+            />
+            <KpiCard
+              label="Expiring Policies"
+              value={data.expiringPolicies.value}
+              delta={data.expiringPolicies.delta}
+              positiveIsGood={false}
+              series={data.expiringPolicies.series}
+              icon={CalendarDays}
+              accent="amber"
+              href="/policies?expiring=30d"
+            />
+            <KpiCard
+              label="Benchmarks Run"
+              value={data.benchmarks.value}
+              delta={data.benchmarks.delta}
+              series={data.benchmarks.series}
+              icon={TrendingUp}
+              accent="violet"
+              href="/benchmarks"
+            />
+            <KpiCard
+              label="Avg. Response Time"
+              value={data.responseTime.value}
+              suffix="h"
+              delta={data.responseTime.delta}
+              positiveIsGood={false}
+              series={data.responseTime.series}
+              icon={Clock}
+              accent="emerald"
+            />
+          </>
+        )}
+      </div>
+    </section>
+  );
+};
+
+const InsightsSection = () => {
+  const { range } = useDashboard();
+  const data = React.useMemo(() => getDashboardData(range), [range]);
+
+  return (
+    <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <TrendInsightCard
+        className="lg:col-span-2"
+        title="Renewals trend"
+        description={`Policies renewed across ${data.rangeLabel}`}
+        data={data.renewalTrend}
+        xKey="label"
+        yKey="renewals"
+        height={240}
+        action={
+          <Button asChild size="sm" variant="ghost" className="text-xs">
+            <Link href="/policies">View all <ChevronRight className="ml-1 h-3 w-3" /></Link>
+          </Button>
+        }
+      />
+      <DonutInsightCard
+        title="Claim mix"
+        description="Open claims by line of business"
+        data={data.claimMix}
+        nameKey="type"
+        valueKey="count"
+        height={240}
+      />
+    </section>
+  );
+};
+
+/* -------------------------------------------------------- */
 /* Page                                                       */
 /* -------------------------------------------------------- */
+function DashboardContent() {
+  return (
+    <div className="mx-auto w-full max-w-7xl space-y-6">
+      <PageHero />
+
+      {/* Utility row */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Quick search</div>
+              <p className="text-xs text-muted-foreground">Look up portals, GPTs, and recent news in one place.</p>
+            </div>
+            <div className="min-w-[260px] flex-1 sm:max-w-md">
+              <GlobalSearch />
+            </div>
+          </div>
+        </Card>
+        <Card>
+          <div className="flex items-center justify-between p-4">
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Compliance status</div>
+              <p className="text-xs text-muted-foreground">All systems normal · last check 2m ago</p>
+            </div>
+            <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <KpiSection />
+      <InsightsSection />
+
+      {/* Activity + alerts */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <div>
+              <CardTitle className="text-base font-semibold">Recent activity</CardTitle>
+              <CardDescription>Across quotes, policies, claims, and benchmarks</CardDescription>
+            </div>
+            <Button asChild size="sm" variant="ghost" className="text-xs">
+              <Link href="/activity">View all <ChevronRight className="ml-1 h-3 w-3" /></Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <ActivityFeed items={ACTIVITY} />
+          </CardContent>
+        </Card>
+        <div className="space-y-4">
+          <AlertsStrip />
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold">Today&apos;s focus</CardTitle>
+              <CardDescription>Suggested next steps</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[
+                { icon: Sparkles, text: "Follow up on 3 stale quotes", href: "/quotes" },
+                { icon: CalendarDays, text: "Renew Acme Corp before May 5", href: "/policies" },
+                { icon: TrendingUp, text: "Run benchmark for new SMB segment", href: "/benchmarks" },
+              ].map((item) => (
+                <Link
+                  key={item.text}
+                  href={item.href}
+                  className="group flex items-center gap-3 rounded-lg border bg-muted/30 p-2.5 text-sm transition hover:bg-muted/60"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-md bg-primary/10 text-primary">
+                    <item.icon className="h-4 w-4" />
+                  </span>
+                  <span className="flex-1">{item.text}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <Separator />
+      <section>
+        <div className="mb-3">
+          <h2 className="text-lg font-semibold tracking-tight">Tools &amp; resources</h2>
+          <p className="text-xs text-muted-foreground">Jump straight into the parts of your workflow you use most.</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <QuickLinkCard
+            title="GPT Collection"
+            description="Explore and manage your organization's curated GPTs."
+            href="/gpts"
+            icon={BotMessageSquare}
+            linkText="Go to Collection"
+          />
+          <QuickLinkCard
+            title="Latest News"
+            description="Stay updated with headlines from the insurance industry."
+            href="/insurance-news"
+            icon={Newspaper}
+            linkText="View News"
+          />
+          <QuickLinkCard
+            title="Bookmarks & Notes"
+            description="Save important links and research notes in one place."
+            href="/bookmarks"
+            icon={BookmarkIcon}
+            linkText="Open Bookmarks"
+          />
+        </div>
+      </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-semibold">What&apos;s new</CardTitle>
+          <CardDescription>Recent additions and improvements.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { t: "Benchmarking prototype", d: "Compare loss ratios across segments." },
+            { t: "Insurance calculator (alpha)", d: "Premium estimator with adjustable factors." },
+            { t: "Loss Run uploader", d: "Drop CSVs, get instant projections." },
+          ].map((item, i) => (
+            <div key={item.t} className="rounded-xl border bg-muted/30 p-3 text-sm transition hover:bg-muted/50">
+              <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {new Date(Date.now() - i * 86400000).toLocaleDateString()}
+              </div>
+              <div className="font-medium">{item.t}</div>
+              <p className="mt-0.5 text-xs text-muted-foreground">{item.d}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   return (
     <AppShell>
-      <div className="mx-auto w-full max-w-7xl space-y-6">
-        <PageHero />
-
-        {/* Utility row */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <div className="text-sm font-medium">Quick search</div>
-                <p className="text-xs text-muted-foreground">Look up portals, GPTs, and recent news in one place.</p>
-              </div>
-              <div className="min-w-[260px] flex-1 sm:max-w-md">
-                <GlobalSearch onFocusCmd={() => { /* hook into ⌘K */ }} />
-              </div>
-            </div>
-          </Card>
-          <Card>
-            <div className="flex items-center justify-between p-4">
-              <div className="space-y-1">
-                <div className="text-sm font-medium">Compliance status</div>
-                <p className="text-xs text-muted-foreground">All systems normal · last check 2m ago</p>
-              </div>
-              <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* KPIs */}
-        <section aria-label="Key performance indicators">
-          <div className="mb-3 flex items-end justify-between">
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight">This week at a glance</h2>
-              <p className="text-xs text-muted-foreground">Compared to the previous 7 days</p>
-            </div>
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
-              <Target className="mr-1 h-3.5 w-3.5" /> Set goals
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {KPI_DATA.map((k) => (
-              <KpiCard key={k.label} {...k} />
-            ))}
-          </div>
-        </section>
-
-        {/* Insights row */}
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <TrendInsightCard
-            className="lg:col-span-2"
-            title="Renewals trend"
-            description="Policies renewed per month — last 6 months"
-            data={RENEWAL_TREND}
-            xKey="month"
-            yKey="renewals"
-            height={240}
-            action={
-              <Button asChild size="sm" variant="ghost" className="text-xs">
-                <Link href="/policies">View all <ChevronRight className="ml-1 h-3 w-3" /></Link>
-              </Button>
-            }
-          />
-          <DonutInsightCard
-            title="Claim mix"
-            description="Open claims by line of business"
-            data={CLAIM_MIX}
-            nameKey="type"
-            valueKey="count"
-            height={240}
-          />
-        </section>
-
-        {/* Activity + alerts */}
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <div>
-                <CardTitle className="text-base font-semibold">Recent activity</CardTitle>
-                <CardDescription>Across quotes, policies, claims, and benchmarks</CardDescription>
-              </div>
-              <Button asChild size="sm" variant="ghost" className="text-xs">
-                <Link href="/activity">View all <ChevronRight className="ml-1 h-3 w-3" /></Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <ActivityFeed items={ACTIVITY} />
-            </CardContent>
-          </Card>
-          <div className="space-y-4">
-            <AlertsStrip />
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Today&apos;s focus</CardTitle>
-                <CardDescription>Suggested next steps</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {[
-                  { icon: Sparkles, text: "Follow up on 3 stale quotes", href: "/quotes" },
-                  { icon: CalendarDays, text: "Renew Acme Corp before May 5", href: "/policies" },
-                  { icon: TrendingUp, text: "Run benchmark for new SMB segment", href: "/benchmarks" },
-                ].map((item) => (
-                  <Link
-                    key={item.text}
-                    href={item.href}
-                    className="group flex items-center gap-3 rounded-lg border bg-muted/30 p-2.5 text-sm transition hover:bg-muted/60"
-                  >
-                    <span className="grid h-8 w-8 place-items-center rounded-md bg-primary/10 text-primary">
-                      <item.icon className="h-4 w-4" />
-                    </span>
-                    <span className="flex-1">{item.text}</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Quick links */}
-        <Separator />
-        <section>
-          <div className="mb-3">
-            <h2 className="text-lg font-semibold tracking-tight">Tools &amp; resources</h2>
-            <p className="text-xs text-muted-foreground">Jump straight into the parts of your workflow you use most.</p>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <QuickLinkCard
-              title="GPT Collection"
-              description="Explore and manage your organization's curated GPTs."
-              href="/gpts"
-              icon={BotMessageSquare}
-              linkText="Go to Collection"
-            />
-            <QuickLinkCard
-              title="Latest News"
-              description="Stay updated with headlines from the insurance industry."
-              href="/insurance-news"
-              icon={Newspaper}
-              linkText="View News"
-            />
-            <QuickLinkCard
-              title="Bookmarks & Notes"
-              description="Save important links and research notes in one place."
-              href="/bookmarks"
-              icon={BookmarkIcon}
-              linkText="Open Bookmarks"
-            />
-          </div>
-        </section>
-
-        {/* What's new */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">What&apos;s new</CardTitle>
-            <CardDescription>Recent additions and improvements.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { t: "Benchmarking prototype", d: "Compare loss ratios across segments." },
-              { t: "Insurance calculator (alpha)", d: "Premium estimator with adjustable factors." },
-              { t: "Loss Run uploader", d: "Drop CSVs, get instant projections." },
-            ].map((item, i) => (
-              <div key={item.t} className="rounded-xl border bg-muted/30 p-3 text-sm transition hover:bg-muted/50">
-                <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {new Date(Date.now() - i * 86400000).toLocaleDateString()}
-                </div>
-                <div className="font-medium">{item.t}</div>
-                <p className="mt-0.5 text-xs text-muted-foreground">{item.d}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardProvider>
+        <DashboardContent />
+      </DashboardProvider>
     </AppShell>
   );
 }
