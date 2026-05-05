@@ -3,17 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   BotMessageSquare,
   Newspaper,
   Bookmark as BookmarkIcon,
   ArrowRight,
-  Globe2,
   CalendarDays,
   Sparkles,
   TrendingUp,
@@ -21,11 +19,12 @@ import {
   Search,
   ChevronRight,
   ShieldCheck,
-  Activity,
   AlertTriangle,
   FileText,
-  Target,
   Bell,
+  DollarSign,
+  Command,
+  Plus,
 } from "lucide-react";
 import { KpiCard, KpiCardSkeleton } from "@/components/dashboard/kpi-card";
 import { ActivityFeed, type ActivityItem } from "@/components/dashboard/activity-feed";
@@ -33,11 +32,11 @@ import { TrendInsightCard, DonutInsightCard } from "@/components/dashboard/insig
 import { DashboardProvider, useDashboard } from "@/components/dashboard/dashboard-context";
 import { DateRangePicker } from "@/components/dashboard/date-range-picker";
 import { getDashboardData } from "@/components/dashboard/dashboard-data";
+import { cn } from "@/lib/utils";
 
-const Kbd = ({ children }: { children: React.ReactNode }) => (
-  <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">{children}</kbd>
-);
-
+/* -------------------------------------------------------- */
+/* Mock activity + alerts                                    */
+/* -------------------------------------------------------- */
 const ACTIVITY: ActivityItem[] = [
   { id: "1", kind: "quote", title: "New quote drafted for Acme Corp", description: "GL + Property bundle, $2.4M TIV", timestamp: new Date(Date.now() - 1000 * 60 * 18), actor: "Paula" },
   { id: "2", kind: "claim", title: "Claim #C-10482 escalated", description: "Auto bodily injury, awaiting adjuster review", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), actor: "System" },
@@ -52,163 +51,248 @@ const ALERTS = [
 ];
 
 /* -------------------------------------------------------- */
-/* Hero                                                      */
+/* Aurora hero                                               */
 /* -------------------------------------------------------- */
-const PageHero = () => (
-  <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-background via-background to-primary/5 p-6 sm:p-8 lg:p-10">
-    <div className="pointer-events-none absolute inset-0 -z-10 opacity-70" aria-hidden>
-      <div className="animate-pulse-slow absolute -top-24 left-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/25 blur-3xl" />
-      <div className="animate-pulse-slower absolute -bottom-24 right-0 h-80 w-80 rounded-full bg-violet-500/20 blur-3xl" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,hsl(var(--border))_1px,transparent_0)] [background-size:24px_24px] opacity-40" />
-    </div>
-    <div className="flex flex-col items-start gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div className="space-y-2">
-        <Badge variant="secondary" className="rounded-full">
-          <Activity className="mr-1 h-3 w-3" /> Live · {new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
-        </Badge>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Welcome back, Paula
-        </h1>
-        <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
-          Your command center for analysis, tools, and daily research. Everything you need to move the book forward — at a glance.
-        </p>
+const AuroraHero = () => {
+  const today = new Date();
+  return (
+    <div className="relative isolate overflow-hidden rounded-3xl border bg-background grain">
+      {/* Mesh gradient blobs */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="aurora-blob-a absolute -top-32 -left-20 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-primary/40 via-cyan-400/25 to-transparent blur-3xl" />
+        <div className="aurora-blob-b absolute -top-24 right-0 h-[380px] w-[380px] rounded-full bg-gradient-to-br from-violet-500/35 via-fuchsia-400/20 to-transparent blur-3xl" />
+        <div className="aurora-blob-c absolute -bottom-32 left-1/3 h-[460px] w-[460px] rounded-full bg-gradient-to-br from-emerald-400/25 via-amber-300/15 to-transparent blur-3xl" />
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <DateRangePicker />
-        <div className="hidden items-center gap-2 rounded-xl border bg-background/80 px-3 py-2 text-xs text-muted-foreground backdrop-blur lg:inline-flex">
-          <Globe2 className="h-3.5 w-3.5" />
-          Global-ready · i18n / RTL
+      {/* Grid overlay */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 dot-grid opacity-50" />
+
+      <div className="relative p-6 sm:p-8 lg:p-10">
+        <div className="flex flex-col items-start gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 live-dot" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                Live · {today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+              </span>
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+              <span className="text-gradient-primary">Welcome back, Paula.</span>
+            </h1>
+            <p className="max-w-2xl text-base text-muted-foreground">
+              Your command center for analysis, tools, and daily research. Here&apos;s what&apos;s moving across your book today.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <DateRangePicker />
+            <Button size="sm" variant="outline" className="rounded-full">
+              <Command className="mr-1.5 h-3.5 w-3.5" /> Command
+              <kbd className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px]">⌘K</kbd>
+            </Button>
+            <Button size="sm" className="rounded-full">
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> New quote
+            </Button>
+          </div>
         </div>
-        <Button asChild size="sm" variant="outline">
-          <Link href="/settings">
-            Settings <ChevronRight className="ml-1 h-4 w-4" />
-          </Link>
-        </Button>
-        <Button size="sm">
-          <Sparkles className="mr-1.5 h-4 w-4" /> New quote
-        </Button>
       </div>
     </div>
-    <div className="mt-5 inline-flex items-center gap-2 rounded-xl border bg-background/80 p-1 pr-3 text-xs text-muted-foreground backdrop-blur">
-      <div className="rounded-lg bg-primary/10 px-2 py-1 text-primary">Pro tip</div>
-      Press <Kbd>⌘</Kbd>/<Kbd>Ctrl</Kbd> + <Kbd>K</Kbd> to open the command palette
+  );
+};
+
+/* -------------------------------------------------------- */
+/* Quick search bar                                          */
+/* -------------------------------------------------------- */
+const GlobalSearch = () => {
+  const [q, setQ] = React.useState("");
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search portals, claims, GPTs, news…"
+        className="h-10 rounded-full border-border/60 bg-background/60 pl-9 pr-16 backdrop-blur"
+        aria-label="Global search"
+      />
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-full border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">⌘K</span>
+    </div>
+  );
+};
+
+/* -------------------------------------------------------- */
+/* Bento side cards                                          */
+/* -------------------------------------------------------- */
+const ComplianceBlock = () => (
+  <div className="relative overflow-hidden rounded-3xl glass p-5">
+    <div aria-hidden className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-emerald-500/20 blur-3xl" />
+    <div className="flex items-center gap-3">
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+        <ShieldCheck className="h-5 w-5" />
+      </div>
+      <div>
+        <div className="text-sm font-semibold">Compliance — All clear</div>
+        <p className="text-xs text-muted-foreground">Last system check 2 minutes ago</p>
+      </div>
+    </div>
+    <div className="mt-3 flex flex-wrap gap-1.5">
+      {["KYC", "AML", "GDPR", "SOC2"].map((t) => (
+        <Badge key={t} variant="secondary" className="rounded-full bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
+          {t} ✓
+        </Badge>
+      ))}
     </div>
   </div>
 );
 
-/* -------------------------------------------------------- */
-/* Quick link card                                           */
-/* -------------------------------------------------------- */
-const QuickLinkCard = ({
+const AlertsBlock = () => (
+  <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-amber-500/5 p-5">
+    <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 h-32 w-32 rounded-full bg-amber-400/30 blur-3xl" />
+    <div className="flex items-center gap-3">
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/20 text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-300">
+        <Bell className="h-5 w-5" />
+      </div>
+      <div>
+        <div className="text-sm font-semibold">{ALERTS.length} need your attention</div>
+        <p className="text-xs text-muted-foreground">Time-sensitive items</p>
+      </div>
+    </div>
+    <ul className="mt-3 space-y-1.5">
+      {ALERTS.map((a) => (
+        <li key={a.id}>
+          <Link href={a.href} className="flex items-center gap-2 rounded-lg p-1.5 text-xs text-muted-foreground transition hover:bg-amber-500/10 hover:text-foreground">
+            {a.level === "warn" ? <AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> : <FileText className="h-3.5 w-3.5 text-primary" />}
+            <span className="flex-1">{a.text}</span>
+            <ChevronRight className="h-3 w-3" />
+          </Link>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+const FocusBlock = () => (
+  <div className="relative overflow-hidden rounded-3xl glass p-5">
+    <div className="mb-3 flex items-center justify-between">
+      <div>
+        <div className="text-sm font-semibold tracking-tight">Today&apos;s focus</div>
+        <p className="text-xs text-muted-foreground">3 suggested next steps</p>
+      </div>
+      <Sparkles className="h-4 w-4 text-primary" />
+    </div>
+    <div className="space-y-2">
+      {[
+        { icon: Sparkles, text: "Follow up on 3 stale quotes", href: "/quotes", accent: "bg-primary/10 text-primary" },
+        { icon: CalendarDays, text: "Renew Acme Corp before May 5", href: "/policies", accent: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+        { icon: TrendingUp, text: "Run benchmark — SMB segment", href: "/benchmarks", accent: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+      ].map((item) => (
+        <Link
+          key={item.text}
+          href={item.href}
+          className="group flex items-center gap-3 rounded-2xl border border-transparent bg-muted/30 p-2.5 text-sm transition hover:border-border/60 hover:bg-muted/60"
+        >
+          <span className={cn("grid h-8 w-8 place-items-center rounded-xl", item.accent)}>
+            <item.icon className="h-4 w-4" />
+          </span>
+          <span className="flex-1">{item.text}</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      ))}
+    </div>
+  </div>
+);
+
+const QuickLinkBento = ({
   title,
   description,
   href,
   icon: Icon,
-  linkText,
+  accent,
 }: {
   title: string;
   description: string;
   href: string;
   icon: React.ElementType;
-  linkText: string;
+  accent: string;
 }) => (
-  <Card className="group relative flex flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-24 h-40 bg-gradient-to-b from-primary/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-    <CardHeader className="flex-row items-start gap-4 space-y-0">
-      <div className="grid h-12 w-12 place-items-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
-        <Icon className="h-6 w-6" />
+  <Link
+    href={href}
+    className={cn(
+      "group relative flex flex-col overflow-hidden rounded-3xl glass p-5 transition-all duration-300",
+      "hover:-translate-y-0.5 hover:shadow-lg",
+    )}
+  >
+    <div aria-hidden className={cn("pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full blur-3xl opacity-60 transition-opacity duration-500 group-hover:opacity-100", accent)} />
+    <div className="relative flex items-start gap-3">
+      <div className="grid h-11 w-11 place-items-center rounded-2xl bg-background/80 ring-1 ring-border">
+        <Icon className="h-5 w-5 text-primary" />
       </div>
       <div className="flex-1">
-        <CardTitle className="text-lg leading-tight">{title}</CardTitle>
-        <CardDescription className="mt-1">{description}</CardDescription>
+        <div className="text-base font-semibold tracking-tight">{title}</div>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
       </div>
-    </CardHeader>
-    <CardFooter className="mt-auto">
-      <Button asChild variant="ghost" className="w-full justify-between">
-        <Link href={href}>
-          {linkText}
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-        </Link>
-      </Button>
-    </CardFooter>
-  </Card>
-);
-
-const GlobalSearch = () => {
-  const [q, setQ] = React.useState("");
-  return (
-    <div className="relative">
-      <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      <Input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search tools, pages, news…"
-        className="pl-8 pr-14"
-        aria-label="Global search"
-      />
-      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground">⌘K</span>
+      <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-foreground" />
     </div>
-  );
-};
-
-const AlertsStrip = () => (
-  <Card className="border-amber-500/30 bg-amber-500/5">
-    <div className="flex items-start gap-3 p-4">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
-        <Bell className="h-4 w-4" />
-      </div>
-      <div className="flex-1 space-y-1">
-        <div className="text-sm font-medium">{ALERTS.length} items need your attention</div>
-        <ul className="space-y-1">
-          {ALERTS.map((a) => (
-            <li key={a.id} className="flex items-center gap-2 text-xs text-muted-foreground">
-              {a.level === "warn" ? (
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-              ) : (
-                <FileText className="h-3.5 w-3.5 text-primary" />
-              )}
-              <Link href={a.href} className="hover:underline">{a.text}</Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  </Card>
+  </Link>
 );
 
 /* -------------------------------------------------------- */
-/* KPI + insights, range-aware                               */
+/* KPI section — bento with featured                         */
 /* -------------------------------------------------------- */
 const KpiSection = () => {
   const { range, isLoading } = useDashboard();
   const data = React.useMemo(() => getDashboardData(range), [range]);
 
+  // Derive a "featured" premium-bound figure from open quotes.
+  const premiumBound = (data.openQuotes.value * 184_500) / 1000; // → thousands
+  const premiumBoundFormatted = Math.round(premiumBound);
+
   return (
-    <section aria-label="Key performance indicators">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+    <section aria-label="Key performance indicators" className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">At a glance</h2>
-          <p className="text-xs text-muted-foreground">For {data.rangeLabel}, vs. previous period</p>
+          <h2 className="text-xl font-semibold tracking-tight">At a glance</h2>
+          <p className="text-xs text-muted-foreground">For {data.rangeLabel} · vs. previous period</p>
         </div>
-        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
-          <Target className="mr-1 h-3.5 w-3.5" /> Set goals
-        </Button>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <KpiCardSkeleton key={i} />)
+          <>
+            <KpiCardSkeleton featured className="xl:col-span-3" />
+            <KpiCardSkeleton className="xl:col-span-3 sm:col-span-2" />
+            <KpiCardSkeleton className="xl:col-span-2" />
+            <KpiCardSkeleton className="xl:col-span-2" />
+            <KpiCardSkeleton className="xl:col-span-2" />
+          </>
         ) : (
           <>
             <KpiCard
+              className="xl:col-span-3"
+              featured
+              label="Premium bound"
+              value={premiumBoundFormatted}
+              prefix="$"
+              suffix="K"
+              delta={data.openQuotes.delta}
+              series={data.openQuotes.series.map((v) => v * 184)}
+              icon={DollarSign}
+              accent="primary"
+              href="/quotes?status=bound"
+            />
+            <KpiCard
+              className="xl:col-span-3 sm:col-span-2"
+              featured
               label="Open Quotes"
               value={data.openQuotes.value}
               delta={data.openQuotes.delta}
               series={data.openQuotes.series}
               icon={Sparkles}
-              accent="primary"
+              accent="cyan"
               href="/quotes?status=open"
             />
             <KpiCard
+              className="xl:col-span-2"
               label="Expiring Policies"
               value={data.expiringPolicies.value}
               delta={data.expiringPolicies.delta}
@@ -219,6 +303,7 @@ const KpiSection = () => {
               href="/policies?expiring=30d"
             />
             <KpiCard
+              className="xl:col-span-2"
               label="Benchmarks Run"
               value={data.benchmarks.value}
               delta={data.benchmarks.delta}
@@ -228,6 +313,7 @@ const KpiSection = () => {
               href="/benchmarks"
             />
             <KpiCard
+              className="xl:col-span-2"
               label="Avg. Response Time"
               value={data.responseTime.value}
               suffix="h"
@@ -244,33 +330,37 @@ const KpiSection = () => {
   );
 };
 
+/* -------------------------------------------------------- */
+/* Insights row                                              */
+/* -------------------------------------------------------- */
 const InsightsSection = () => {
   const { range } = useDashboard();
   const data = React.useMemo(() => getDashboardData(range), [range]);
 
   return (
-    <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <TrendInsightCard
-        className="lg:col-span-2"
+        className="lg:col-span-8"
         title="Renewals trend"
         description={`Policies renewed across ${data.rangeLabel}`}
         data={data.renewalTrend}
         xKey="label"
         yKey="renewals"
-        height={240}
+        height={280}
         action={
-          <Button asChild size="sm" variant="ghost" className="text-xs">
+          <Button asChild size="sm" variant="ghost" className="rounded-full text-xs">
             <Link href="/policies">View all <ChevronRight className="ml-1 h-3 w-3" /></Link>
           </Button>
         }
       />
       <DonutInsightCard
+        className="lg:col-span-4"
         title="Claim mix"
-        description="Open claims by line of business"
+        description="By line of business"
         data={data.claimMix}
         nameKey="type"
         valueKey="count"
-        height={240}
+        height={280}
       />
     </section>
   );
@@ -282,136 +372,110 @@ const InsightsSection = () => {
 function DashboardContent() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      <PageHero />
+      <AuroraHero />
 
-      {/* Utility row */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Quick search</div>
-              <p className="text-xs text-muted-foreground">Look up portals, GPTs, and recent news in one place.</p>
+      {/* Utility row — search + side cards */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="rounded-3xl glass p-5 lg:col-span-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-0.5">
+              <div className="text-sm font-semibold tracking-tight">Quick search</div>
+              <p className="text-xs text-muted-foreground">Portals, GPTs, claims, news — all from one bar.</p>
             </div>
             <div className="min-w-[260px] flex-1 sm:max-w-md">
               <GlobalSearch />
             </div>
           </div>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between p-4">
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Compliance status</div>
-              <p className="text-xs text-muted-foreground">All systems normal · last check 2m ago</p>
-            </div>
-            <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-          </div>
-        </Card>
-      </div>
+        </div>
+        <div className="lg:col-span-4">
+          <ComplianceBlock />
+        </div>
+      </section>
 
+      {/* KPIs */}
       <KpiSection />
+
+      {/* Insights */}
       <InsightsSection />
 
-      {/* Activity + alerts */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      {/* Activity + alerts + focus — bento */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="rounded-3xl glass lg:col-span-7">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div>
-              <CardTitle className="text-base font-semibold">Recent activity</CardTitle>
+              <CardTitle className="text-base font-semibold tracking-tight">Recent activity</CardTitle>
               <CardDescription>Across quotes, policies, claims, and benchmarks</CardDescription>
             </div>
-            <Button asChild size="sm" variant="ghost" className="text-xs">
+            <Button asChild size="sm" variant="ghost" className="rounded-full text-xs">
               <Link href="/activity">View all <ChevronRight className="ml-1 h-3 w-3" /></Link>
             </Button>
           </CardHeader>
           <CardContent>
             <ActivityFeed items={ACTIVITY} />
           </CardContent>
-        </Card>
-        <div className="space-y-4">
-          <AlertsStrip />
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Today&apos;s focus</CardTitle>
-              <CardDescription>Suggested next steps</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {[
-                { icon: Sparkles, text: "Follow up on 3 stale quotes", href: "/quotes" },
-                { icon: CalendarDays, text: "Renew Acme Corp before May 5", href: "/policies" },
-                { icon: TrendingUp, text: "Run benchmark for new SMB segment", href: "/benchmarks" },
-              ].map((item) => (
-                <Link
-                  key={item.text}
-                  href={item.href}
-                  className="group flex items-center gap-3 rounded-lg border bg-muted/30 p-2.5 text-sm transition hover:bg-muted/60"
-                >
-                  <span className="grid h-8 w-8 place-items-center rounded-md bg-primary/10 text-primary">
-                    <item.icon className="h-4 w-4" />
-                  </span>
-                  <span className="flex-1">{item.text}</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
+        </div>
+        <div className="space-y-4 lg:col-span-5">
+          <AlertsBlock />
+          <FocusBlock />
         </div>
       </section>
 
-      <Separator />
-      <section>
-        <div className="mb-3">
-          <h2 className="text-lg font-semibold tracking-tight">Tools &amp; resources</h2>
-          <p className="text-xs text-muted-foreground">Jump straight into the parts of your workflow you use most.</p>
+      {/* Tools — bento links */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Tools &amp; resources</h2>
+          <p className="text-xs text-muted-foreground">Jump into the parts of your workflow you use most.</p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <QuickLinkCard
+          <QuickLinkBento
             title="GPT Collection"
-            description="Explore and manage your organization's curated GPTs."
+            description="Curated GPTs for your team."
             href="/gpts"
             icon={BotMessageSquare}
-            linkText="Go to Collection"
+            accent="bg-primary/30"
           />
-          <QuickLinkCard
+          <QuickLinkBento
             title="Latest News"
-            description="Stay updated with headlines from the insurance industry."
+            description="Insurance-industry headlines."
             href="/insurance-news"
             icon={Newspaper}
-            linkText="View News"
+            accent="bg-cyan-400/30"
           />
-          <QuickLinkCard
+          <QuickLinkBento
             title="Bookmarks & Notes"
-            description="Save important links and research notes in one place."
+            description="Save links and research."
             href="/bookmarks"
             icon={BookmarkIcon}
-            linkText="Open Bookmarks"
+            accent="bg-violet-500/30"
           />
         </div>
       </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">What&apos;s new</CardTitle>
-          <CardDescription>Recent additions and improvements.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {/* What's new */}
+      <section className="rounded-3xl glass p-5">
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <h3 className="text-base font-semibold tracking-tight">What&apos;s new</h3>
+            <p className="text-xs text-muted-foreground">Recent additions and improvements.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[
             { t: "Benchmarking prototype", d: "Compare loss ratios across segments." },
             { t: "Insurance calculator (alpha)", d: "Premium estimator with adjustable factors." },
             { t: "Loss Run uploader", d: "Drop CSVs, get instant projections." },
           ].map((item, i) => (
-            <div key={item.t} className="rounded-xl border bg-muted/30 p-3 text-sm transition hover:bg-muted/50">
-              <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-                <CalendarDays className="h-3.5 w-3.5" />
+            <div key={item.t} className="rounded-2xl border bg-background/60 p-3 text-sm transition hover:bg-background/90">
+              <div className="mb-1 flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                <CalendarDays className="h-3 w-3" />
                 {new Date(Date.now() - i * 86400000).toLocaleDateString()}
               </div>
-              <div className="font-medium">{item.t}</div>
+              <div className="font-semibold tracking-tight">{item.t}</div>
               <p className="mt-0.5 text-xs text-muted-foreground">{item.d}</p>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }
