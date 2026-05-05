@@ -16,7 +16,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export interface InsightCardBaseProps {
@@ -44,16 +44,16 @@ const tooltipStyle: React.CSSProperties = {
 
 function Shell({ title, description, action, className, children }: InsightCardBaseProps & { children: React.ReactNode }) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <div className={cn("overflow-hidden rounded-3xl glass", className)}>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div>
-          <CardTitle className="text-base font-semibold">{title}</CardTitle>
-          {description ? <CardDescription>{description}</CardDescription> : null}
+          <CardTitle className="text-base font-semibold tracking-tight">{title}</CardTitle>
+          {description ? <CardDescription className="mt-0.5">{description}</CardDescription> : null}
         </div>
         {action}
       </CardHeader>
       <CardContent>{children}</CardContent>
-    </Card>
+    </div>
   );
 }
 
