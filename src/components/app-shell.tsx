@@ -25,9 +25,7 @@ import {
   Sun,
   Moon,
   Monitor,
-  Bell,
   Settings,
-  Zap,
 } from "lucide-react";
 import { Command as CommandIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -338,12 +336,6 @@ function Sidebar({ pathname }: { pathname: string }) {
                 <div className="truncate text-[13px] font-bold tracking-tight text-gradient-primary">
                   InsuranceAssist
                 </div>
-                <div className="flex items-center gap-1">
-                  <Zap className="h-2.5 w-2.5 text-primary/60" />
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-                    Pro
-                  </span>
-                </div>
               </div>
             </motion.div>
           ) : (
@@ -586,17 +578,6 @@ function Topbar({ onOpenCommand }: { onOpenCommand: () => void }) {
 
       {/* Right actions */}
       <div className="ml-auto flex items-center gap-1">
-        {/* Notification bell */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-[7px] right-[7px] h-1.5 w-1.5 rounded-full bg-primary ring-1 ring-background" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>Notifications</TooltipContent>
-        </Tooltip>
-
         {/* Theme toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
