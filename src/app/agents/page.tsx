@@ -58,6 +58,7 @@ import {
   ShieldCheck,
   Search,
   FileText,
+  ExternalLink,
   TrendingUp,
   Mail,
   Calculator,
@@ -77,6 +78,7 @@ interface Agent {
   id: string;
   name: string;
   description: string;
+  link: string;
   iconName: string;
   accent: string;
   ring: string;
@@ -137,12 +139,12 @@ const ICON_OPTIONS: { name: string; icon: React.ElementType }[] = [
 ];
 
 const DEFAULT_AGENTS: Agent[] = [
-  { id: "a1", name: "Underwriting Co-Pilot", description: "Triages submissions, pulls Hartford appetite, drafts the first quote.",   iconName: "Bot",         accent: "from-primary to-primary/60",     ring: "ring-primary/30",     status: "planned", folderId: null, createdAt: 1 },
-  { id: "a2", name: "Claims Triage",         description: "Routes new FNOL into the right queue and auto-flags fast-track items.",   iconName: "Workflow",    accent: "from-rose-500 to-pink-500",      ring: "ring-rose-500/30",    status: "planned", folderId: null, createdAt: 2 },
-  { id: "a3", name: "Renewal Watcher",       description: "Monitors expiring policies, surfaces blockers, and prepares quotes.",     iconName: "TrendingUp",  accent: "from-amber-500 to-orange-500",   ring: "ring-amber-500/30",   status: "planned", folderId: null, createdAt: 3 },
-  { id: "a4", name: "Loss-Run Analyst",      description: "Reads multi-year loss runs and explains trends in plain language.",       iconName: "FileText",    accent: "from-violet-500 to-fuchsia-500", ring: "ring-violet-500/30",  status: "planned", folderId: null, createdAt: 4 },
-  { id: "a5", name: "Compliance Sentinel",   description: "Cross-checks documents against state requirements before binding.",       iconName: "ShieldCheck", accent: "from-emerald-500 to-teal-500",   ring: "ring-emerald-500/30", status: "planned", folderId: null, createdAt: 5 },
-  { id: "a6", name: "Broker Concierge",      description: "Handles common broker questions across multiple lines of business.",      iconName: "UsersRound",  accent: "from-cyan-500 to-blue-500",      ring: "ring-cyan-500/30",    status: "planned", folderId: null, createdAt: 6 },
+  { id: "a1", name: "Underwriting Co-Pilot", description: "Triages submissions, pulls Hartford appetite, drafts the first quote.",   link: "", iconName: "Bot",         accent: "from-primary to-primary/60",     ring: "ring-primary/30",     status: "planned", folderId: null, createdAt: 1 },
+  { id: "a2", name: "Claims Triage",         description: "Routes new FNOL into the right queue and auto-flags fast-track items.",   link: "", iconName: "Workflow",    accent: "from-rose-500 to-pink-500",      ring: "ring-rose-500/30",    status: "planned", folderId: null, createdAt: 2 },
+  { id: "a3", name: "Renewal Watcher",       description: "Monitors expiring policies, surfaces blockers, and prepares quotes.",     link: "", iconName: "TrendingUp",  accent: "from-amber-500 to-orange-500",   ring: "ring-amber-500/30",   status: "planned", folderId: null, createdAt: 3 },
+  { id: "a4", name: "Loss-Run Analyst",      description: "Reads multi-year loss runs and explains trends in plain language.",       link: "", iconName: "FileText",    accent: "from-violet-500 to-fuchsia-500", ring: "ring-violet-500/30",  status: "planned", folderId: null, createdAt: 4 },
+  { id: "a5", name: "Compliance Sentinel",   description: "Cross-checks documents against state requirements before binding.",       link: "", iconName: "ShieldCheck", accent: "from-emerald-500 to-teal-500",   ring: "ring-emerald-500/30", status: "planned", folderId: null, createdAt: 5 },
+  { id: "a6", name: "Broker Concierge",      description: "Handles common broker questions across multiple lines of business.",      link: "", iconName: "UsersRound",  accent: "from-cyan-500 to-blue-500",      ring: "ring-cyan-500/30",    status: "planned", folderId: null, createdAt: 6 },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -161,7 +163,7 @@ function getFolderColor(color: string) {
 // ─── Agent Dialog ─────────────────────────────────────────────────────────────
 
 interface AgentFormState {
-  name: string; description: string; iconName: string;
+  name: string; description: string; link: string; iconName: string;
   accent: string; ring: string; status: AgentStatus; folderId: string | null;
 }
 
@@ -170,13 +172,13 @@ function AgentDialog({ open, onClose, onSave, initial, folders }: {
   onSave: (data: AgentFormState) => void;
   initial?: Agent; folders: Folder[];
 }) {
-  const blank: AgentFormState = { name: "", description: "", iconName: "Bot", accent: ACCENT_OPTIONS[0].accent, ring: ACCENT_OPTIONS[0].ring, status: "planned", folderId: null };
+  const blank: AgentFormState = { name: "", description: "", link: "", iconName: "Bot", accent: ACCENT_OPTIONS[0].accent, ring: ACCENT_OPTIONS[0].ring, status: "planned", folderId: null };
   const [form, setForm] = React.useState<AgentFormState>(blank);
 
   React.useEffect(() => {
     if (open) {
       setForm(initial
-        ? { name: initial.name, description: initial.description, iconName: initial.iconName, accent: initial.accent, ring: initial.ring, status: initial.status, folderId: initial.folderId }
+        ? { name: initial.name, description: initial.description, link: initial.link ?? "", iconName: initial.iconName, accent: initial.accent, ring: initial.ring, status: initial.status, folderId: initial.folderId }
         : blank);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,6 +200,10 @@ function AgentDialog({ open, onClose, onSave, initial, folders }: {
           <div className="space-y-1.5">
             <Label>Description</Label>
             <Textarea placeholder="What does this agent do?" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} className="resize-none" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Link (optional)</Label>
+            <Input type="url" placeholder="https://chat.openai.com/g/..." value={form.link} onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))} />
           </div>
           <div className="space-y-1.5">
             <Label>Icon</Label>
@@ -400,6 +406,16 @@ function AgentCard({ agent, onStatusChange, onEdit, onDelete, onMove }: {
       {/* Footer */}
       <div className="flex items-center gap-2 border-t border-border/40 px-5 py-3">
         <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><UsersRound className="h-3 w-3" /> Insurance Agent</span>
+        {agent.link && (
+          <a
+            href={agent.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          >
+            Open <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
       </div>
     </div>
   );
