@@ -24,6 +24,8 @@ import {
   Globe,
   CircleDot,
   Bookmark as BookmarkIcon,
+  UsersRound,
+  Wand2,
 } from "lucide-react";
 import { Command as CommandIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -59,29 +61,46 @@ interface NavGroup {
  ************************************/
 export const navigation: NavGroup[] = [
   {
-    title: "Analysis",
+    title: "Overview",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, status: 'live' },
-      { href: "/benchmarking", label: "Benchmarking", icon: Scale, status: 'soon' },
-      { href: "/analytics", label: "Analytics", icon: BarChart2, status: 'soon' },
     ],
   },
   {
     title: "Tools",
     items: [
-      { href: "/loss-run", label: "Loss Run", icon: FileText, status: 'dev' },
-      { href: "/bookmarks", label: "Bookmarks & Notes", icon: BookmarkIcon, status: 'live' },
-      { href: "/viability-assessment", label: "Viability Assessment", icon: ShieldCheck, status: 'soon' },
-      { href: "/insurance-calculator", label: "Insurance Calculator", icon: Calculator, status: 'soon' },
       { href: "/gpts", label: "GPT Collection", icon: BotMessageSquare, status: 'live' },
-      { href: "/professional-liability", label: "Professional Liability", icon: LifeBuoy, status: 'soon' },
-      { href: "/health-insurance", label: "Health Insurance", icon: HeartPulse, status: 'soon' },
+      { href: "/bookmarks", label: "Bookmarks & Notes", icon: BookmarkIcon, status: 'live' },
+      { href: "/loss-run", label: "Loss Run", icon: FileText, status: 'dev' },
+    ],
+  },
+  {
+    title: "Agents",
+    items: [
+      { href: "/agents", label: "Insurance Agents", icon: UsersRound, status: 'dev' },
+    ],
+  },
+  {
+    title: "Skills",
+    items: [
+      { href: "/skills", label: "Skills Library", icon: Wand2, status: 'dev' },
     ],
   },
   {
     title: "Insurance News",
     items: [
       { href: "/", label: "Latest News", icon: Newspaper, status: 'live' },
+    ],
+  },
+  {
+    title: "Pending",
+    items: [
+      { href: "/benchmarking", label: "Benchmarking", icon: Scale, status: 'soon' },
+      { href: "/analytics", label: "Analytics", icon: BarChart2, status: 'soon' },
+      { href: "/viability-assessment", label: "Viability Assessment", icon: ShieldCheck, status: 'soon' },
+      { href: "/insurance-calculator", label: "Insurance Calculator", icon: Calculator, status: 'soon' },
+      { href: "/professional-liability", label: "Professional Liability", icon: LifeBuoy, status: 'soon' },
+      { href: "/health-insurance", label: "Health Insurance", icon: HeartPulse, status: 'soon' },
     ],
   },
 ];
