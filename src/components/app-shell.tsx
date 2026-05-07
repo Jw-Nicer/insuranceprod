@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence, useSpring, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BotMessageSquare,
   Calculator,
@@ -30,7 +30,7 @@ import {
 import { Command as CommandIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -501,10 +501,11 @@ function MobileSidebar({ pathname }: { pathname: string }) {
           className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground sm:hidden hover:bg-muted transition-colors"
           aria-label="Open menu"
         >
-          <Menu className="h-4.5 w-4.5" />
+          <Menu className="h-4 w-4" />
         </button>
       </SheetTrigger>
       <SheetContent side="left" className="w-72 p-0 border-r border-border/50">
+        <SheetTitle className="sr-only">Navigation</SheetTitle>
         {/* Mobile brand header */}
         <div className="flex h-14 items-center gap-2.5 border-b border-border/50 px-4">
           <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-violet-500 to-fuchsia-600 shadow-md shadow-primary/25 ring-1 ring-white/15">

@@ -779,8 +779,3 @@ export default function SkillsPage() {
   );
 }
 
-// Expose SkillFormState for the save handler
-type SkillFormState = {
-  name: string; description: string; iconName: string;
-  accent: string; ring: string; status: SkillStatus; folderId: string | null;
-};
