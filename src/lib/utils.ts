@@ -27,3 +27,10 @@ export function formatCurrency(value: number | null | undefined): string {
         maximumFractionDigits: 0,
     }).format(value);
 }
+
+export function normalizeUrl(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return "";
+  if (/^(https?:|mailto:|tel:)/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
