@@ -22,10 +22,16 @@ import {
   ChevronRight,
   Sparkles,
   ExternalLink,
+  PlayCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  OnboardingTour,
+  shouldShowTour,
+  resetTour,
+} from "@/components/onboarding-tour";
 
-// ─── Real data referenced from each section ───────────────────────────────────
+// ─── Real data referenced from each section ─────────────────────────────
 
 const TOOLS = [
   {
@@ -75,7 +81,7 @@ const SKILL_PREVIEWS = [
   { name: "Carrier Lookup", description: "Pull NAIC, AM Best rating, and recent regulatory actions.", icon: Search, accent: "from-rose-500 to-pink-500" },
 ];
 
-// ─── Section header ───────────────────────────────────────────────────────────
+// ─── Section header ────────────────────────────────────────────
 
 function SectionHeader({
   title,
@@ -117,7 +123,7 @@ function SectionHeader({
   );
 }
 
-// ─── Tools section ────────────────────────────────────────────────────────────
+// ─── Tools section ───────────────────────────────────────────────
 
 function ToolsSection() {
   return (
@@ -166,7 +172,7 @@ function ToolsSection() {
   );
 }
 
-// ─── Agents section ───────────────────────────────────────────────────────────
+// ─── Agents section ──────────────────────────────────────────────
 
 function AgentsSection() {
   return (
@@ -211,7 +217,7 @@ function AgentsSection() {
   );
 }
 
-// ─── Skills section ───────────────────────────────────────────────────────────
+// ─── Skills section ──────────────────────────────────────────────
 
 function SkillsSection() {
   return (
@@ -256,7 +262,7 @@ function SkillsSection() {
   );
 }
 
-// ─── Insurance news section ───────────────────────────────────────────────────
+// ─── Insurance news section ──────────────────────────────────────────
 
 function InsuranceNewsSection() {
   return (
@@ -294,10 +300,23 @@ function InsuranceNewsSection() {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page ───────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const today = new Date();
+  const [tourOpen, setTourOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (shouldShowTour()) {
+      const timer = setTimeout(() => setTourOpen(true), 400);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  function replayTour() {
+    resetTour();
+    setTourOpen(true);
+  }
 
   return (
     <AppShell>
@@ -328,6 +347,16 @@ export default function DashboardPage() {
             <p className="mt-3 max-w-2xl text-base text-muted-foreground">
               Your insurance command center. Jump to your tools, review your agents and skills, or catch up on the latest news.
             </p>
+            <div className="mt-5">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                onClick={replayTour}
+              >
+                <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Replay tour
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -338,6 +367,8 @@ export default function DashboardPage() {
         <InsuranceNewsSection />
 
       </div>
+
+      <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </AppShell>
   );
 }
