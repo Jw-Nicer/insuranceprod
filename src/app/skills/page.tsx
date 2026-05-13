@@ -69,10 +69,12 @@ import {
   Briefcase,
   ScrollText,
   FolderPlus,
+  ExternalLink,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizeUrl } from "@/lib/utils";
+import { getAllSkillFiles, setSkillFiles, deleteSkillFiles, type StoredFile } from "@/lib/skill-files";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────
 
 type SkillStatus = "for-review" | "stable" | "for-bug-fix" | "proven";
 
@@ -87,6 +89,7 @@ interface Skill {
   id: string;
   name: string;
   description: string;
+  link: string;
   iconName: string;
   accent: string;
   ring: string;
@@ -102,7 +105,7 @@ interface Folder {
   createdAt: number;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────
 
 const STATUS_OPTIONS: { value: SkillStatus; label: string; badge: string }[] = [
   { value: "for-review",  label: "For Review",  badge: "bg-amber-500/15 text-amber-700 ring-amber-500/25 dark:text-amber-400" },
@@ -146,15 +149,15 @@ const ICON_OPTIONS: { name: string; icon: React.ElementType }[] = [
 ];
 
 const DEFAULT_SKILLS: Skill[] = [
-  { id: "s1", name: "Summarize Policy",   description: "Condense any policy document into a one-page brief.",              iconName: "FileText",    accent: "from-primary to-primary/60",     ring: "ring-primary/30",     status: "for-review", folderId: null, createdAt: 1 },
-  { id: "s2", name: "Premium Estimator",  description: "Quick premium calc with adjustable factors and limits.",           iconName: "Calculator",  accent: "from-emerald-500 to-teal-500",   ring: "ring-emerald-500/30", status: "for-review", folderId: null, createdAt: 2 },
-  { id: "s3", name: "Email Drafter",      description: "Draft broker / client emails in your firm's tone.",                iconName: "Mail",        accent: "from-cyan-500 to-blue-500",      ring: "ring-cyan-500/30",    status: "for-review", folderId: null, createdAt: 3 },
-  { id: "s4", name: "Coverage Gap Check", description: "Compare a policy against a checklist; flag missing endorsements.", iconName: "ShieldCheck", accent: "from-violet-500 to-fuchsia-500", ring: "ring-violet-500/30",  status: "for-review", folderId: null, createdAt: 4 },
-  { id: "s5", name: "Loss Ratio Trend",   description: "Plot loss ratio across years and call out outliers.",              iconName: "TrendingUp",  accent: "from-amber-500 to-orange-500",   ring: "ring-amber-500/30",   status: "for-review", folderId: null, createdAt: 5 },
-  { id: "s6", name: "Carrier Lookup",     description: "Pull NAIC, AM Best rating, and recent regulatory actions.",        iconName: "Search",      accent: "from-rose-500 to-pink-500",      ring: "ring-rose-500/30",    status: "for-review", folderId: null, createdAt: 6 },
+  { id: "s1", name: "Summarize Policy",   description: "Condense any policy document into a one-page brief.",              link: "", iconName: "FileText",    accent: "from-primary to-primary/60",     ring: "ring-primary/30",     status: "for-review", folderId: null, createdAt: 1 },
+  { id: "s2", name: "Premium Estimator",  description: "Quick premium calc with adjustable factors and limits.",           link: "", iconName: "Calculator",  accent: "from-emerald-500 to-teal-500",   ring: "ring-emerald-500/30", status: "for-review", folderId: null, createdAt: 2 },
+  { id: "s3", name: "Email Drafter",      description: "Draft broker / client emails in your firm's tone.",                link: "", iconName: "Mail",        accent: "from-cyan-500 to-blue-500",      ring: "ring-cyan-500/30",    status: "for-review", folderId: null, createdAt: 3 },
+  { id: "s4", name: "Coverage Gap Check", description: "Compare a policy against a checklist; flag missing endorsements.", link: "", iconName: "ShieldCheck", accent: "from-violet-500 to-fuchsia-500", ring: "ring-violet-500/30",  status: "for-review", folderId: null, createdAt: 4 },
+  { id: "s5", name: "Loss Ratio Trend",   description: "Plot loss ratio across years and call out outliers.",              link: "", iconName: "TrendingUp",  accent: "from-amber-500 to-orange-500",   ring: "ring-amber-500/30",   status: "for-review", folderId: null, createdAt: 5 },
+  { id: "s6", name: "Carrier Lookup",     description: "Pull NAIC, AM Best rating, and recent regulatory actions.",        link: "", iconName: "Search",      accent: "from-rose-500 to-pink-500",      ring: "ring-rose-500/30",    status: "for-review", folderId: null, createdAt: 6 },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 function formatBytes(b: number) {
@@ -172,10 +175,10 @@ function getFolderColor(color: string) {
   return FOLDER_COLORS.find((c) => c.label === color) ?? FOLDER_COLORS[0];
 }
 
-// ─── Skill Dialog ─────────────────────────────────────────────────────────────
+// ─── Skill Dialog ────────────────────────────────────────────────
 
 interface SkillFormState {
-  name: string; description: string; iconName: string;
+  name: string; description: string; link: string; iconName: string;
   accent: string; ring: string; status: SkillStatus; folderId: string | null;
 }
 
@@ -184,13 +187,13 @@ function SkillDialog({ open, onClose, onSave, initial, folders }: {
   onSave: (data: SkillFormState) => void;
   initial?: Skill; folders: Folder[];
 }) {
-  const blank: SkillFormState = { name: "", description: "", iconName: "FileText", accent: ACCENT_OPTIONS[0].accent, ring: ACCENT_OPTIONS[0].ring, status: "for-review", folderId: null };
+  const blank: SkillFormState = { name: "", description: "", link: "", iconName: "FileText", accent: ACCENT_OPTIONS[0].accent, ring: ACCENT_OPTIONS[0].ring, status: "for-review", folderId: null };
   const [form, setForm] = React.useState<SkillFormState>(blank);
 
   React.useEffect(() => {
     if (open) {
       setForm(initial
-        ? { name: initial.name, description: initial.description, iconName: initial.iconName, accent: initial.accent, ring: initial.ring, status: initial.status, folderId: initial.folderId }
+        ? { name: initial.name, description: initial.description, link: initial.link ?? "", iconName: initial.iconName, accent: initial.accent, ring: initial.ring, status: initial.status, folderId: initial.folderId }
         : blank);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -212,6 +215,10 @@ function SkillDialog({ open, onClose, onSave, initial, folders }: {
           <div className="space-y-1.5">
             <Label>Description</Label>
             <Textarea placeholder="What does this skill do?" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} className="resize-none" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Link (optional)</Label>
+            <Input type="url" placeholder="https://chat.openai.com/g/... or docs URL" value={form.link} onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))} />
           </div>
           <div className="space-y-1.5">
             <Label>Icon</Label>
@@ -277,7 +284,7 @@ function SkillDialog({ open, onClose, onSave, initial, folders }: {
   );
 }
 
-// ─── Folder Dialog ────────────────────────────────────────────────────────────
+// ─── Folder Dialog ─────────────────────────────────────────────────
 
 function FolderDialog({ open, onClose, onSave, initial }: {
   open: boolean; onClose: () => void;
@@ -325,7 +332,7 @@ function FolderDialog({ open, onClose, onSave, initial }: {
   );
 }
 
-// ─── Move to Folder Dialog ────────────────────────────────────────────────────
+// ─── Move to Folder Dialog ──────────────────────────────────────────────
 
 function MoveToFolderDialog({ open, onClose, onMove, folders, currentFolderId }: {
   open: boolean; onClose: () => void;
@@ -355,7 +362,7 @@ function MoveToFolderDialog({ open, onClose, onMove, folders, currentFolderId }:
   );
 }
 
-// ─── Skill Card ───────────────────────────────────────────────────────────────
+// ─── Skill Card ────────────────────────────────────────────────────
 
 function SkillCard({ skill, files, folders, onStatusChange, onFilesAdd, onFileRemove, onEdit, onDelete, onMove }: {
   skill: Skill; files: AttachedFile[]; folders: Folder[];
@@ -445,6 +452,16 @@ function SkillCard({ skill, files, folders, onStatusChange, onFilesAdd, onFileRe
       <div className="flex items-center gap-2 border-t border-border/40 px-5 py-3">
         <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Wand2 className="h-3 w-3" /> Skill</span>
         <div className="ml-auto flex items-center gap-1.5">
+          {skill.link && (
+            <a
+              href={skill.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-7 items-center gap-1 rounded-full bg-primary px-2.5 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Open <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
           <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => e.target.files && onFilesAdd(skill.id, e.target.files)} />
           <Button variant="ghost" size="sm" className="h-7 rounded-full px-2.5 text-[11px]" onClick={() => fileInputRef.current?.click()}>
             <Paperclip className="mr-1 h-3 w-3" /> Attach
@@ -458,7 +475,7 @@ function SkillCard({ skill, files, folders, onStatusChange, onFilesAdd, onFileRe
   );
 }
 
-// ─── Folder Section ───────────────────────────────────────────────────────────
+// ─── Folder Section ─────────────────────────────────────────────────
 
 function FolderSection({ folder, skills, filesBySkillId, folders, expanded, onToggle, onRename, onDelete, onStatusChange, onFilesAdd, onFileRemove, onEditSkill, onDeleteSkill, onMoveSkill }: {
   folder: Folder; skills: Skill[]; filesBySkillId: Record<string, AttachedFile[]>;
@@ -518,7 +535,7 @@ function FolderSection({ folder, skills, filesBySkillId, folders, expanded, onTo
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page ───────────────────────────────────────────────────────
 
 export default function SkillsPage() {
   const [skills, setSkills] = React.useState<Skill[]>(DEFAULT_SKILLS);
@@ -526,6 +543,8 @@ export default function SkillsPage() {
   const [filesBySkillId, setFilesBySkillId] = React.useState<Record<string, AttachedFile[]>>({});
   const [expandedFolders, setExpandedFolders] = React.useState<Set<string>>(new Set());
   const [mounted, setMounted] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState<SkillStatus | "all">("all");
 
   // Dialog state
   const [skillDialogOpen, setSkillDialogOpen] = React.useState(false);
@@ -537,7 +556,7 @@ export default function SkillsPage() {
   const [deletingSkill, setDeletingSkill] = React.useState<Skill | undefined>();
   const [deletingFolder, setDeletingFolder] = React.useState<Folder | undefined>();
 
-  // Load from localStorage on mount
+  // Load from localStorage + IndexedDB on mount
   React.useEffect(() => {
     setMounted(true);
     try {
@@ -546,6 +565,9 @@ export default function SkillsPage() {
       const f = localStorage.getItem("skills-library:folders");
       if (f) setFolders(JSON.parse(f));
     } catch {}
+    getAllSkillFiles().then((stored) => {
+      if (Object.keys(stored).length > 0) setFilesBySkillId(stored as Record<string, AttachedFile[]>);
+    }).catch(() => {});
   }, []);
 
   // Persist skills
@@ -562,10 +584,11 @@ export default function SkillsPage() {
 
   // ── Skill handlers ──
   function handleSaveSkill(data: SkillFormState) {
+    const clean = { ...data, link: normalizeUrl(data.link) };
     if (editingSkill) {
-      setSkills((prev) => prev.map((s) => s.id === editingSkill.id ? { ...s, ...data } : s));
+      setSkills((prev) => prev.map((s) => s.id === editingSkill.id ? { ...s, ...clean } : s));
     } else {
-      setSkills((prev) => [...prev, { id: uid(), createdAt: Date.now(), ...data }]);
+      setSkills((prev) => [...prev, { id: uid(), createdAt: Date.now(), ...clean }]);
     }
     setSkillDialogOpen(false);
     setEditingSkill(undefined);
@@ -575,6 +598,7 @@ export default function SkillsPage() {
     if (!deletingSkill) return;
     setSkills((prev) => prev.filter((s) => s.id !== deletingSkill.id));
     setFilesBySkillId((prev) => { const n = { ...prev }; delete n[deletingSkill.id]; return n; });
+    deleteSkillFiles(deletingSkill.id).catch(() => {});
     setDeletingSkill(undefined);
   }
 
@@ -591,11 +615,19 @@ export default function SkillsPage() {
     const newFiles: AttachedFile[] = await Promise.all(
       Array.from(fileList).map(async (f) => ({ name: f.name, size: f.size, type: f.type, data: await f.arrayBuffer() }))
     );
-    setFilesBySkillId((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), ...newFiles] }));
+    setFilesBySkillId((prev) => {
+      const updated = [...(prev[id] ?? []), ...newFiles];
+      setSkillFiles(id, updated as StoredFile[]).catch(() => {});
+      return { ...prev, [id]: updated };
+    });
   }
 
   function handleFileRemove(id: string, index: number) {
-    setFilesBySkillId((prev) => ({ ...prev, [id]: (prev[id] ?? []).filter((_, i) => i !== index) }));
+    setFilesBySkillId((prev) => {
+      const updated = (prev[id] ?? []).filter((_, i) => i !== index);
+      setSkillFiles(id, updated as StoredFile[]).catch(() => {});
+      return { ...prev, [id]: updated };
+    });
   }
 
   // ── Folder handlers ──
@@ -626,7 +658,18 @@ export default function SkillsPage() {
     });
   }
 
-  const unfiledSkills = skills.filter((s) => !s.folderId || !folders.find((f) => f.id === s.folderId));
+  const q = query.trim().toLowerCase();
+  const matchesFilter = (s: Skill) => {
+    if (statusFilter !== "all" && s.status !== statusFilter) return false;
+    if (!q) return true;
+    return s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q);
+  };
+  const filteredSkills = skills.filter(matchesFilter);
+  const unfiledSkills = filteredSkills.filter((s) => !s.folderId || !folders.find((f) => f.id === s.folderId));
+  const isFiltering = !!q || statusFilter !== "all";
+  const visibleFolders = isFiltering
+    ? folders.filter((f) => filteredSkills.some((s) => s.folderId === f.id))
+    : folders;
   const totalFiles = Object.values(filesBySkillId).reduce((a, f) => a + f.length, 0);
 
   // Shared card props
@@ -683,26 +726,69 @@ export default function SkillsPage() {
                 </Button>
               </div>
             </div>
-            {/* Status legend */}
-            <div className="mt-5 flex flex-wrap gap-2">
-              {STATUS_OPTIONS.map((opt) => (
-                <span key={opt.value} className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ring-inset", opt.badge)}>
-                  {opt.label}
-                </span>
-              ))}
+            {/* Search + status filters */}
+            <div className="mt-5 space-y-3">
+              <div className="relative max-w-sm">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search skills…"
+                  className="h-9 rounded-full pl-9 pr-9 text-sm"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="absolute right-2.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ring-inset transition-colors",
+                    statusFilter === "all"
+                      ? "bg-foreground text-background ring-foreground"
+                      : "bg-muted/50 text-muted-foreground ring-border hover:text-foreground"
+                  )}
+                >
+                  All · {skills.length}
+                </button>
+                {STATUS_OPTIONS.map((opt) => {
+                  const count = skills.filter((s) => s.status === opt.value).length;
+                  const active = statusFilter === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setStatusFilter(active ? "all" : opt.value)}
+                      className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ring-inset transition-all",
+                        opt.badge,
+                        active ? "scale-105 shadow-sm" : "opacity-70 hover:opacity-100"
+                      )}
+                    >
+                      {opt.label} · {count}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Folders */}
-        {folders.length > 0 && (
+        {visibleFolders.length > 0 && (
           <section className="space-y-2">
             <h2 className="text-base font-semibold tracking-tight">Folders</h2>
-            {folders.map((folder) => (
+            {visibleFolders.map((folder) => (
               <FolderSection key={folder.id} folder={folder}
-                skills={skills.filter((s) => s.folderId === folder.id)}
+                skills={filteredSkills.filter((s) => s.folderId === folder.id)}
                 filesBySkillId={filesBySkillId} folders={folders}
-                expanded={expandedFolders.has(folder.id)}
+                expanded={expandedFolders.has(folder.id) || isFiltering}
                 onToggle={() => toggleFolder(folder.id)}
                 onRename={() => { setEditingFolder(folder); setFolderDialogOpen(true); }}
                 onDelete={() => setDeletingFolder(folder)}
@@ -723,10 +809,18 @@ export default function SkillsPage() {
             <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-3xl glass py-12 text-center">
               <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 dot-grid opacity-[0.3]" />
               <Wand2 className="mb-3 h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm font-medium text-muted-foreground">All skills are in folders</p>
-              <Button size="sm" className="mt-4 rounded-full" onClick={() => { setEditingSkill(undefined); setSkillDialogOpen(true); }}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Add skill
-              </Button>
+              <p className="text-sm font-medium text-muted-foreground">
+                {isFiltering ? "No skills match your filters" : "All skills are in folders"}
+              </p>
+              {isFiltering ? (
+                <Button size="sm" variant="outline" className="mt-4 rounded-full" onClick={() => { setQuery(""); setStatusFilter("all"); }}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button size="sm" className="mt-4 rounded-full" onClick={() => { setEditingSkill(undefined); setSkillDialogOpen(true); }}>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Add skill
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -778,4 +872,3 @@ export default function SkillsPage() {
     </AppShell>
   );
 }
-
