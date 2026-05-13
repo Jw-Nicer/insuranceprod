@@ -50,6 +50,8 @@ import {
 } from "@/components/ui/command";
 import { useTheme } from "next-themes";
 import { Logo } from "@/components/logo";
+import { useProfile, initials } from "@/lib/profile";
+import { SettingsDialog } from "@/components/settings-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -245,7 +247,50 @@ function NavLink({
 
 // ─── Sidebar (desktop) ────────────────────────────────────────────────────────
 
-function Sidebar({ pathname }: { pathname: string }) {
+function UserCard({ isCollapsed, onOpenSettings }: { isCollapsed: boolean; onOpenSettings: () => void }) {
+  const [profile] = useProfile();
+  return (
+    <div className="p-2">
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        onClick={onOpenSettings}
+        className={cn(
+          "flex w-full items-center rounded-xl p-2 text-left",
+          "hover:bg-primary/[0.07] transition-colors duration-200",
+          isCollapsed ? "justify-center" : "gap-2.5",
+        )}
+        aria-label="Open settings"
+      >
+        {/* Avatar */}
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 text-white text-[11px] font-bold shadow-md shadow-primary/20 ring-1 ring-white/10">
+          {initials(profile.name)}
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-500 ring-1 ring-background">
+            <span className="h-1 w-1 rounded-full bg-white" />
+          </span>
+        </div>
+
+        {/* Info + settings */}
+        {!isCollapsed && (
+          <>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[12px] font-semibold leading-tight">{profile.name}</div>
+              <div className="truncate text-[10px] leading-tight text-muted-foreground/55">
+                {profile.role}
+              </div>
+            </div>
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg text-muted-foreground/35 group-hover:text-foreground transition-colors">
+              <Settings className="h-3.5 w-3.5" />
+            </span>
+          </>
+        )}
+      </motion.button>
+    </div>
+  );
+}
+
+function Sidebar({ pathname, onOpenSettings }: { pathname: string; onOpenSettings: () => void }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
@@ -448,44 +493,7 @@ function Sidebar({ pathname }: { pathname: string }) {
         {/* Top separator with fade */}
         <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent mx-3" />
 
-        <div className="p-2">
-          <motion.div
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className={cn(
-              "flex items-center rounded-xl p-2 cursor-pointer",
-              "hover:bg-primary/[0.07] transition-colors duration-200",
-              isCollapsed ? "justify-center" : "gap-2.5",
-            )}
-          >
-            {/* Avatar */}
-            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 text-white text-[11px] font-bold shadow-md shadow-primary/20 ring-1 ring-white/10">
-              P
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-500 ring-1 ring-background">
-                <span className="h-1 w-1 rounded-full bg-white" />
-              </span>
-            </div>
-
-            {/* Info + settings */}
-            {!isCollapsed && (
-              <>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[12px] font-semibold leading-tight">Paula</div>
-                  <div className="truncate text-[10px] leading-tight text-muted-foreground/55">
-                    Insurance Pro
-                  </div>
-                </div>
-                <button
-                  className="flex h-6 w-6 items-center justify-center rounded-lg text-muted-foreground/35 hover:text-foreground hover:bg-muted transition-colors"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Settings className="h-3.5 w-3.5" />
-                </button>
-              </>
-            )}
-          </motion.div>
-        </div>
+        <UserCard isCollapsed={isCollapsed} onOpenSettings={onOpenSettings} />
       </div>
     </motion.aside>
   );
@@ -555,9 +563,10 @@ function ThemeIcon() {
   return <Monitor className="h-4 w-4" />;
 }
 
-function Topbar({ onOpenCommand }: { onOpenCommand: () => void }) {
+function Topbar({ onOpenCommand, onOpenSettings }: { onOpenCommand: () => void; onOpenSettings: () => void }) {
   const { setTheme } = useTheme();
   const pathname = usePathname();
+  const [profile] = useProfile();
 
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-border/50 bg-background/75 px-4 backdrop-blur-xl">
@@ -608,18 +617,18 @@ function Topbar({ onOpenCommand }: { onOpenCommand: () => void }) {
               className="ml-1 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/25 py-1.5 pl-2 pr-3 transition-colors hover:bg-muted/60"
             >
               <div className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 text-white text-[10px] font-bold">
-                P
+                {initials(profile.name)}
               </div>
-              <span className="hidden text-[13px] font-medium md:block">Paula</span>
+              <span className="hidden text-[13px] font-medium md:block">{profile.name}</span>
             </motion.button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>
-              <div className="font-semibold">Paula</div>
-              <div className="text-xs font-normal text-muted-foreground">Insurance Pro</div>
+              <div className="font-semibold">{profile.name}</div>
+              <div className="text-xs font-normal text-muted-foreground">{profile.role}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 text-sm">
+            <DropdownMenuItem onSelect={onOpenSettings} className="gap-2 text-sm">
               <Settings className="h-3.5 w-3.5" /> Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -695,14 +704,18 @@ function CommandPalette({
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [openCommand, setOpenCommand] = React.useState(false);
+  const [openSettings, setOpenSettings] = React.useState(false);
 
   return (
     <TooltipProvider>
       <div className="flex h-screen w-full overflow-hidden" data-testid="app-shell">
-        <Sidebar pathname={pathname} />
+        <Sidebar pathname={pathname} onOpenSettings={() => setOpenSettings(true)} />
 
         <div className="flex flex-1 flex-col overflow-hidden">
-          <Topbar onOpenCommand={() => setOpenCommand(true)} />
+          <Topbar
+            onOpenCommand={() => setOpenCommand(true)}
+            onOpenSettings={() => setOpenSettings(true)}
+          />
 
           <div className="flex-1 overflow-auto">
             <main className="p-4 sm:p-6 lg:p-8">{children}</main>
@@ -715,6 +728,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <CommandPalette open={openCommand} setOpen={setOpenCommand} pathname={pathname} />
+        <SettingsDialog open={openSettings} onClose={() => setOpenSettings(false)} />
       </div>
     </TooltipProvider>
   );
