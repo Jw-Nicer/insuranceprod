@@ -59,6 +59,7 @@ import {
   Search,
   FileText,
   ExternalLink,
+  X,
   TrendingUp,
   Mail,
   Calculator,
@@ -68,9 +69,9 @@ import {
   HeartPulse,
   Globe,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizeUrl } from "@/lib/utils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────
 
 type AgentStatus = "planned" | "in-development" | "active" | "paused";
 
@@ -94,7 +95,7 @@ interface Folder {
   createdAt: number;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────
 
 const STATUS_OPTIONS: { value: AgentStatus; label: string; badge: string }[] = [
   { value: "planned",        label: "Planned",        badge: "bg-gray-500/15 text-gray-700 ring-gray-500/25 dark:text-gray-300" },
@@ -147,7 +148,7 @@ const DEFAULT_AGENTS: Agent[] = [
   { id: "a6", name: "Broker Concierge",      description: "Handles common broker questions across multiple lines of business.",      link: "", iconName: "UsersRound",  accent: "from-cyan-500 to-blue-500",      ring: "ring-cyan-500/30",    status: "planned", folderId: null, createdAt: 6 },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 function getIcon(name: string): React.ElementType {
@@ -160,7 +161,7 @@ function getFolderColor(color: string) {
   return FOLDER_COLORS.find((c) => c.label === color) ?? FOLDER_COLORS[0];
 }
 
-// ─── Agent Dialog ─────────────────────────────────────────────────────────────
+// ─── Agent Dialog ────────────────────────────────────────────────
 
 interface AgentFormState {
   name: string; description: string; link: string; iconName: string;
@@ -269,7 +270,7 @@ function AgentDialog({ open, onClose, onSave, initial, folders }: {
   );
 }
 
-// ─── Folder Dialog ────────────────────────────────────────────────────────────
+// ─── Folder Dialog ─────────────────────────────────────────────────
 
 function FolderDialog({ open, onClose, onSave, initial }: {
   open: boolean; onClose: () => void;
@@ -317,7 +318,7 @@ function FolderDialog({ open, onClose, onSave, initial }: {
   );
 }
 
-// ─── Move to Folder Dialog ────────────────────────────────────────────────────
+// ─── Move to Folder Dialog ──────────────────────────────────────────────
 
 function MoveToFolderDialog({ open, onClose, onMove, folders, currentFolderId }: {
   open: boolean; onClose: () => void;
@@ -347,7 +348,7 @@ function MoveToFolderDialog({ open, onClose, onMove, folders, currentFolderId }:
   );
 }
 
-// ─── Agent Card ───────────────────────────────────────────────────────────────
+// ─── Agent Card ────────────────────────────────────────────────────
 
 function AgentCard({ agent, onStatusChange, onEdit, onDelete, onMove }: {
   agent: Agent;
@@ -421,7 +422,7 @@ function AgentCard({ agent, onStatusChange, onEdit, onDelete, onMove }: {
   );
 }
 
-// ─── Folder Section ───────────────────────────────────────────────────────────
+// ─── Folder Section ─────────────────────────────────────────────────
 
 function FolderSection({ folder, agents, expanded, onToggle, onRename, onDelete, onStatusChange, onEditAgent, onDeleteAgent, onMoveAgent }: {
   folder: Folder; agents: Agent[];
@@ -479,13 +480,15 @@ function FolderSection({ folder, agents, expanded, onToggle, onRename, onDelete,
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page ───────────────────────────────────────────────────────
 
 export default function AgentsPage() {
   const [agents, setAgents] = React.useState<Agent[]>(DEFAULT_AGENTS);
   const [folders, setFolders] = React.useState<Folder[]>([]);
   const [expandedFolders, setExpandedFolders] = React.useState<Set<string>>(new Set());
   const [mounted, setMounted] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState<AgentStatus | "all">("all");
 
   // Dialog state
   const [agentDialogOpen, setAgentDialogOpen] = React.useState(false);
@@ -520,10 +523,11 @@ export default function AgentsPage() {
 
   // ── Agent handlers ──
   function handleSaveAgent(data: AgentFormState) {
+    const clean = { ...data, link: normalizeUrl(data.link) };
     if (editingAgent) {
-      setAgents((prev) => prev.map((a) => a.id === editingAgent.id ? { ...a, ...data } : a));
+      setAgents((prev) => prev.map((a) => a.id === editingAgent.id ? { ...a, ...clean } : a));
     } else {
-      setAgents((prev) => [...prev, { id: uid(), createdAt: Date.now(), ...data }]);
+      setAgents((prev) => [...prev, { id: uid(), createdAt: Date.now(), ...clean }]);
     }
     setAgentDialogOpen(false);
     setEditingAgent(undefined);
@@ -572,7 +576,18 @@ export default function AgentsPage() {
     });
   }
 
-  const unfiledAgents = agents.filter((a) => !a.folderId || !folders.find((f) => f.id === a.folderId));
+  const q = query.trim().toLowerCase();
+  const matchesFilter = (a: Agent) => {
+    if (statusFilter !== "all" && a.status !== statusFilter) return false;
+    if (!q) return true;
+    return a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
+  };
+  const filteredAgents = agents.filter(matchesFilter);
+  const unfiledAgents = filteredAgents.filter((a) => !a.folderId || !folders.find((f) => f.id === a.folderId));
+  const isFiltering = !!q || statusFilter !== "all";
+  const visibleFolders = isFiltering
+    ? folders.filter((f) => filteredAgents.some((a) => a.folderId === f.id))
+    : folders;
 
   const cardHandlers = {
     onStatusChange: handleStatusChange,
@@ -620,25 +635,68 @@ export default function AgentsPage() {
                 </Button>
               </div>
             </div>
-            {/* Status legend */}
-            <div className="mt-5 flex flex-wrap gap-2">
-              {STATUS_OPTIONS.map((opt) => (
-                <span key={opt.value} className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ring-inset", opt.badge)}>
-                  {opt.label}
-                </span>
-              ))}
+            {/* Search + status filters */}
+            <div className="mt-5 space-y-3">
+              <div className="relative max-w-sm">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search agents…"
+                  className="h-9 rounded-full pl-9 pr-9 text-sm"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="absolute right-2.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ring-inset transition-colors",
+                    statusFilter === "all"
+                      ? "bg-foreground text-background ring-foreground"
+                      : "bg-muted/50 text-muted-foreground ring-border hover:text-foreground"
+                  )}
+                >
+                  All · {agents.length}
+                </button>
+                {STATUS_OPTIONS.map((opt) => {
+                  const count = agents.filter((a) => a.status === opt.value).length;
+                  const active = statusFilter === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setStatusFilter(active ? "all" : opt.value)}
+                      className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ring-inset transition-all",
+                        opt.badge,
+                        active ? "scale-105 shadow-sm" : "opacity-70 hover:opacity-100"
+                      )}
+                    >
+                      {opt.label} · {count}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Folders */}
-        {folders.length > 0 && (
+        {visibleFolders.length > 0 && (
           <section className="space-y-2">
             <h2 className="text-base font-semibold tracking-tight">Folders</h2>
-            {folders.map((folder) => (
+            {visibleFolders.map((folder) => (
               <FolderSection key={folder.id} folder={folder}
-                agents={agents.filter((a) => a.folderId === folder.id)}
-                expanded={expandedFolders.has(folder.id)}
+                agents={filteredAgents.filter((a) => a.folderId === folder.id)}
+                expanded={expandedFolders.has(folder.id) || isFiltering}
                 onToggle={() => toggleFolder(folder.id)}
                 onRename={() => { setEditingFolder(folder); setFolderDialogOpen(true); }}
                 onDelete={() => setDeletingFolder(folder)}
@@ -659,10 +717,18 @@ export default function AgentsPage() {
             <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-3xl glass py-12 text-center">
               <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 dot-grid opacity-[0.3]" />
               <Bot className="mb-3 h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm font-medium text-muted-foreground">All agents are in folders</p>
-              <Button size="sm" className="mt-4 rounded-full" onClick={() => { setEditingAgent(undefined); setAgentDialogOpen(true); }}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Add agent
-              </Button>
+              <p className="text-sm font-medium text-muted-foreground">
+                {isFiltering ? "No agents match your filters" : "All agents are in folders"}
+              </p>
+              {isFiltering ? (
+                <Button size="sm" variant="outline" className="mt-4 rounded-full" onClick={() => { setQuery(""); setStatusFilter("all"); }}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button size="sm" className="mt-4 rounded-full" onClick={() => { setEditingAgent(undefined); setAgentDialogOpen(true); }}>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Add agent
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
