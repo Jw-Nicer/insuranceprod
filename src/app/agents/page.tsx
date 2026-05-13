@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -482,13 +483,19 @@ function FolderSection({ folder, agents, expanded, onToggle, onRename, onDelete,
 
 // ─── Page ───────────────────────────────────────────────────────
 
-export default function AgentsPage() {
+function AgentsPageInner() {
+  const searchParams = useSearchParams();
   const [agents, setAgents] = React.useState<Agent[]>(DEFAULT_AGENTS);
   const [folders, setFolders] = React.useState<Folder[]>([]);
   const [expandedFolders, setExpandedFolders] = React.useState<Set<string>>(new Set());
   const [mounted, setMounted] = React.useState(false);
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState(() => searchParams?.get("q") ?? "");
   const [statusFilter, setStatusFilter] = React.useState<AgentStatus | "all">("all");
+
+  React.useEffect(() => {
+    const q = searchParams?.get("q");
+    if (q) setQuery(q);
+  }, [searchParams]);
 
   // Dialog state
   const [agentDialogOpen, setAgentDialogOpen] = React.useState(false);
@@ -778,5 +785,13 @@ export default function AgentsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </AppShell>
+  );
+}
+
+export default function AgentsPage() {
+  return (
+    <React.Suspense fallback={<AppShell><div className="mx-auto w-full max-w-7xl" /></AppShell>}>
+      <AgentsPageInner />
+    </React.Suspense>
   );
 }
