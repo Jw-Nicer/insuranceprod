@@ -73,6 +73,7 @@ import {
 } from "lucide-react";
 import { cn, normalizeUrl } from "@/lib/utils";
 import { getAllSkillFiles, setSkillFiles, deleteSkillFiles, type StoredFile } from "@/lib/skill-files";
+import { seedSkillFilesIfNeeded } from "@/lib/skill-seed";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -565,9 +566,14 @@ export default function SkillsPage() {
       const f = localStorage.getItem("skills-library:folders");
       if (f) setFolders(JSON.parse(f));
     } catch {}
-    getAllSkillFiles().then((stored) => {
-      if (Object.keys(stored).length > 0) setFilesBySkillId(stored as Record<string, AttachedFile[]>);
-    }).catch(() => {});
+    getAllSkillFiles()
+      .then((stored) => seedSkillFilesIfNeeded(stored))
+      .then((withSeeds) => {
+        if (Object.keys(withSeeds).length > 0) {
+          setFilesBySkillId(withSeeds as Record<string, AttachedFile[]>);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Persist skills
