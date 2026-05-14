@@ -53,6 +53,9 @@ const STORAGE_KEYS = [
   "tour-completed-v1",
 ];
 
+// Hide the GitHub Source link in production builds. Dev/preview still show it.
+const SHOW_SOURCE = process.env.NODE_ENV !== "production";
+
 function exportLibrary() {
   const data: Record<string, unknown> = {};
   for (const key of STORAGE_KEYS) {
@@ -365,15 +368,17 @@ export function SettingsDialog({
                   v1.0.0
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href="https://github.com/jw-nicer/insuranceprod"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                >
-                  <Github className="h-3.5 w-3.5" /> Source
-                </a>
+              <div className={cn("grid gap-2", SHOW_SOURCE ? "grid-cols-2" : "grid-cols-1")}>
+                {SHOW_SOURCE && (
+                  <a
+                    href="https://github.com/jw-nicer/insuranceprod"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    <Github className="h-3.5 w-3.5" /> Source
+                  </a>
+                )}
                 <button
                   onClick={onClose}
                   className="flex items-center justify-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
