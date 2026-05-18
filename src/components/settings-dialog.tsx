@@ -41,8 +41,24 @@ import {
   Github,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useProfile, initials } from "@/lib/profile";
+import { useProfile } from "@/lib/profile";
 import { resetTour } from "@/components/onboarding-tour";
+import { AvatarWithImage } from "@/components/avatar-with-image";
+
+// Resize an uploaded image to a small JPEG data URL so it fits in localStorage.
+async function imageToDataUrl(file: File, maxSize = 192): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas not supported");
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
 
 const STORAGE_KEYS = [
   "skills-library:skills",
@@ -124,27 +140,50 @@ export function SettingsDialog({
 
   const [draftName, setDraftName] = React.useState(profile.name);
   const [draftRole, setDraftRole] = React.useState(profile.role);
+  const [draftAvatar, setDraftAvatar] = React.useState<string | undefined>(profile.avatarDataUrl);
   const [savedFlash, setSavedFlash] = React.useState(false);
   const [importStatus, setImportStatus] = React.useState<string | null>(null);
   const [confirmClear, setConfirmClear] = React.useState(false);
+  const [avatarError, setAvatarError] = React.useState<string | null>(null);
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (open) {
       setDraftName(profile.name);
       setDraftRole(profile.role);
+      setDraftAvatar(profile.avatarDataUrl);
+      setAvatarError(null);
       setImportStatus(null);
       setSavedFlash(false);
     }
-  }, [open, profile.name, profile.role]);
+  }, [open, profile.name, profile.role, profile.avatarDataUrl]);
 
   function saveProfile() {
     const next = {
       name: draftName.trim() || profile.name,
       role: draftRole.trim() || profile.role,
+      avatarDataUrl: draftAvatar,
     };
     setProfile(next);
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1600);
+  }
+
+  async function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please choose an image file.");
+      return;
+    }
+    try {
+      const url = await imageToDataUrl(file);
+      setDraftAvatar(url);
+      setAvatarError(null);
+    } catch {
+      setAvatarError("Couldn't read that image.");
+    }
   }
 
   function handleReplayTour() {
@@ -202,14 +241,45 @@ export function SettingsDialog({
 
             <TabsContent value="profile" className="mt-5 space-y-5">
               <div className="flex items-center gap-3 rounded-2xl border border-border/50 bg-muted/30 p-4">
-                <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-primary to-violet-600 text-white text-sm font-bold shadow-md ring-1 ring-white/10">
-                  {initials(draftName || profile.name)}
-                </div>
-                <div className="min-w-0">
+                <AvatarWithImage
+                  name={draftName || profile.name}
+                  src={draftAvatar}
+                  size={48}
+                  textSize="text-sm"
+                />
+                <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">{draftName || profile.name}</div>
                   <div className="truncate text-xs text-muted-foreground">{draftRole || profile.role}</div>
                 </div>
+                <div className="flex flex-col items-end gap-1.5">
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarFile}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full text-xs"
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    {draftAvatar ? "Change photo" : "Upload photo"}
+                  </Button>
+                  {draftAvatar && (
+                    <button
+                      onClick={() => setDraftAvatar(undefined)}
+                      className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
+              {avatarError && (
+                <p className="-mt-3 text-xs text-destructive">{avatarError}</p>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="set-name">Display name</Label>
                 <Input
