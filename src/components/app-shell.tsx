@@ -50,9 +50,10 @@ import {
 } from "@/components/ui/command";
 import { useTheme } from "next-themes";
 import { Logo } from "@/components/logo";
-import { useProfile, initials } from "@/lib/profile";
+import { useProfile } from "@/lib/profile";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { WeatherIndicator } from "@/components/weather-indicator";
+import { AvatarWithImage } from "@/components/avatar-with-image";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -265,8 +266,8 @@ function UserCard({ isCollapsed, onOpenSettings }: { isCollapsed: boolean; onOpe
         aria-label="Open settings"
       >
         {/* Avatar */}
-        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 text-white text-[11px] font-bold shadow-md shadow-primary/20 ring-1 ring-white/10">
-          {initials(profile.name)}
+        <div className="relative">
+          <AvatarWithImage name={profile.name} src={profile.avatarDataUrl} size={32} textSize="text-[11px]" />
           <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-500 ring-1 ring-background">
             <span className="h-1 w-1 rounded-full bg-white" />
           </span>
@@ -622,9 +623,7 @@ function Topbar({ onOpenCommand, onOpenSettings }: { onOpenCommand: () => void; 
               whileTap={{ scale: 0.98 }}
               className="ml-1 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/25 py-1.5 pl-2 pr-3 transition-colors hover:bg-muted/60"
             >
-              <div className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 text-white text-[10px] font-bold">
-                {initials(profile.name)}
-              </div>
+              <AvatarWithImage name={profile.name} src={profile.avatarDataUrl} size={24} textSize="text-[10px]" />
               <span className="hidden text-[13px] font-medium md:block">{profile.name}</span>
             </motion.button>
           </DropdownMenuTrigger>
