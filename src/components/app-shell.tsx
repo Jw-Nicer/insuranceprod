@@ -52,6 +52,7 @@ import { useTheme } from "next-themes";
 import { Logo } from "@/components/logo";
 import { useProfile, initials } from "@/lib/profile";
 import { SettingsDialog } from "@/components/settings-dialog";
+import { WeatherIndicator } from "@/components/weather-indicator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -488,10 +489,15 @@ function Sidebar({ pathname, onOpenSettings }: { pathname: string; onOpenSetting
         </TooltipProvider>
       </ScrollArea>
 
-      {/* ── User card (pinned bottom) ── */}
+      {/* ── Weather + user card (pinned bottom) ── */}
       <div className="relative z-10 shrink-0">
         {/* Top separator with fade */}
         <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent mx-3" />
+
+        <WeatherIndicator isCollapsed={isCollapsed} />
+
+        {/* Separator between weather and user card */}
+        <div className="h-px bg-gradient-to-r from-transparent via-border/40 to-transparent mx-3" />
 
         <UserCard isCollapsed={isCollapsed} onOpenSettings={onOpenSettings} />
       </div>
