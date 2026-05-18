@@ -6,6 +6,7 @@ const EVENT = "profile-changed";
 export interface UserProfile {
   name: string;
   role: string;
+  avatarDataUrl?: string;
 }
 
 export const DEFAULT_PROFILE: UserProfile = { name: "Paula", role: "Insurance Pro" };
